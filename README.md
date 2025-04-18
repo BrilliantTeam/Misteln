@@ -1,6 +1,7 @@
-[Purpur]: https://purpurmc.org
+# Misteln
 
-## Tentacles
-Template to create a mantainable fork of [Purpur].
+Forked from Purpur's tentacles project.
 
-This readme will eventually contain instructions regarding the patch system. For now, visit Purpur's [CONTRIBUTING.md](https://github.com/PurpurMC/Purpur/blob/HEAD/CONTRIBUTING.md).
+Original project license is MIT,
+For Misteln, we apply same license for only project's files,
+but the patches is licensed by GPLv3.

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Fri, 18 Apr 2025 22:49:09 +0800
+Subject: [PATCH] Rebranding
+
+
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+index 7107eabf02d9d9b69d97c978ba421ad52031ec3f..df75b70dd84bad12b878b24c5d2e562f58957945 100644
+--- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
++++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+@@ -25,6 +25,13 @@ public interface ServerBuildInfo {
+     Key BRAND_PURPUR_ID = Key.key("purpurmc", "purpur");
+     // Purpur end
+ 
++    // Misteln start
++    /**
++     * The brand id for Misteln.
++     */
++    Key BRAND_MISTELN_ID = Key.key("brilliantw", "misteln");
++    // Misteln end
++
+     /**
+      * Gets the {@code ServerBuildInfo}.
+      *
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index c880d0010849ab733ad13bbd18fab3c864d0cf61..597d394b76e33b724201e7b08301211b1d825d33 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -259,7 +259,7 @@ public class VersionCommand extends BukkitCommand {
+         // Purpur start
+         int distance = getVersionFetcher().distance();
+         final Component message = Component.join(net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()),
+-            ChatColor.parseMM("<grey>Current Purpur Version: %s%s*", distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>", Bukkit.getVersion()),
++            ChatColor.parseMM("<grey>Current Misteln Version: %s%s*", distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>", Bukkit.getVersion()), // Misteln
+             // Purpur end
+             msg
+         );

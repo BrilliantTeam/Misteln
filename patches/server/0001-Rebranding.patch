@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Encode42 <me@encode42.dev>
-Date: Thu, 16 Sep 2021 20:39:45 -0400
-Subject: [PATCH] Rebrand
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Fri, 18 Apr 2025 22:49:20 +0800
+Subject: [PATCH] Rebranding
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index d23ecfabf6bf1e355fb2efe5abd80236259ce3c4..180c329b060d2ac95c7eac7d08253bb04303bb7c 100644
+index d23ecfabf6bf1e355fb2efe5abd80236259ce3c4..90e51403b406b87546d2494e05934946dc2c7006 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,7 +13,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
@@ -13,7 +13,7 @@ index d23ecfabf6bf1e355fb2efe5abd80236259ce3c4..180c329b060d2ac95c7eac7d08253bb0
  
  dependencies {
 -    implementation(project(":purpur-api")) // Purpur
-+    implementation(project(":tentacles-api")) // Purpur // Tentacles
++    implementation(project(":misteln-api")) // Purpur // Misteln
      // Paper start
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -22,83 +22,45 @@ index d23ecfabf6bf1e355fb2efe5abd80236259ce3c4..180c329b060d2ac95c7eac7d08253bb0
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
 -            "Implementation-Title" to "Purpur", // Purpur
-+            "Implementation-Title" to "Tentacles", // Purpur // Tentacles
++            "Implementation-Title" to "Misteln", // Purpur // Misteln
              "Implementation-Version" to implementationVersion,
              "Implementation-Vendor" to date, // Paper
 -            "Specification-Title" to "Purpur", // Purpur
-+            "Specification-Title" to "Tentacles", // Purpur // Tentacles
++            "Specification-Title" to "Misteln", // Purpur // Misteln
              "Specification-Version" to project.version,
 -            "Specification-Vendor" to "Purpur Team", // Purpur
 -            "Brand-Id" to "purpurmc:purpur", // Purpur
 -            "Brand-Name" to "Purpur", // Purpur
-+            "Specification-Vendor" to "Tentacles Team", // Purpur // Tentacles
-+            "Brand-Id" to "tentaclesmc:tentacles", // Purpur // Tentacles
-+            "Brand-Name" to "Tentacles", // Purpur // Tentacles
++            "Specification-Vendor" to "Brilliant Team", // Purpur // Misteln
++            "Brand-Id" to "brilliantw:misteln", // Purpur // Misteln
++            "Brand-Name" to "Misteln", // Purpur // Misteln
              "Build-Number" to (build ?: ""),
              "Build-Time" to Instant.now().toString(),
              "Git-Branch" to gitBranch, // Paper
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index 6d36fc6d8e22d9b68dea3830f6ecc8763184c343..c1334dbd5e027c41a4502c14491d34e58b54a8f1 100644
+index 6d36fc6d8e22d9b68dea3830f6ecc8763184c343..ce07cfc581a4aecaa9dbe0326cdd3efce20df071 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-@@ -36,7 +36,7 @@ public class PaperVersionFetcher implements VersionFetcher {
-     private static final int DISTANCE_ERROR = -1;
-     private static final int DISTANCE_UNKNOWN = -2;
-     // Purpur start
--    private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
-+    private static final String DOWNLOAD_PAGE = "https://api.example.com/nonexistent/downloads"; // Tentacles
-     private static int distance = DISTANCE_UNKNOWN; public int distance() { return distance; }
-     // Purpur end
- 
 @@ -52,7 +52,7 @@ public class PaperVersionFetcher implements VersionFetcher {
          if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
              updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
          } else {
 -            updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", build); // Purpur
-+            updateMessage = getUpdateStatusMessage("PurpurMC/Tentacles", build); // Purpur // Tentacles
++            updateMessage = getUpdateStatusMessage("BrilliantTeam/Misteln", build); // Purpur // Misteln
          }
          final @Nullable Component history = this.getHistory();
  
-@@ -62,16 +62,18 @@ public class PaperVersionFetcher implements VersionFetcher {
-     private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
+@@ -63,7 +63,7 @@ public class PaperVersionFetcher implements VersionFetcher {
          //int distance = DISTANCE_ERROR; // Purpur - use field
  
-+        /* // Tentacles start
          final OptionalInt buildNumber = build.buildNumber();
-         if (buildNumber.isPresent()) {
+-        if (buildNumber.isPresent()) {
++        if (false) { // Misteln - always prefer github
              distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
          } else {
-+        */ // Tentacles end
              final Optional<String> gitBranch = build.gitBranch();
-             final Optional<String> gitCommit = build.gitCommit();
-             if (gitBranch.isPresent() && gitCommit.isPresent()) {
-                 distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
-             }
--        }
-+        //} // Tentacles
- 
-         return switch (distance) {
-             case DISTANCE_ERROR -> text("* Error obtaining version information", NamedTextColor.RED); // Purpur
-@@ -89,7 +91,7 @@ public class PaperVersionFetcher implements VersionFetcher {
-     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
-         try {
-             try (final BufferedReader reader = Resources.asCharSource(
--                URI.create("https://api.purpurmc.org/v2/purpur/" + build.minecraftVersionId()).toURL(), // Purpur
-+                URI.create("https://api.example.com/nonexistent/" + build.minecraftVersionId()).toURL(), // Purpur // Tentacles
-                 Charsets.UTF_8
-             ).openBufferedStream()) {
-                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
-@@ -97,7 +99,7 @@ public class PaperVersionFetcher implements VersionFetcher {
-                 final int latest = json.getAsJsonObject("builds").getAsJsonPrimitive("latest").getAsInt(); // Purpur
-                 return latest - jenkinsBuild;
-             } catch (final JsonSyntaxException ex) {
--                LOGGER.error("Error parsing json from Purpur's downloads API", ex); // Purpur
-+                LOGGER.error("Error parsing json from nonexistent downloads API.", ex); // Purpur // Tentacles
-                 return DISTANCE_ERROR;
-             }
-         } catch (final IOException e) {
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-index 3cb56595822799926a8141e60a42f5d1edfc6de5..4a82269a24baf65c62550166201a48ddbe33f9ae 100644
+index 3cb56595822799926a8141e60a42f5d1edfc6de5..4fbf31cd8ece420593d15f842026077de403c402 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 @@ -17,7 +17,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
@@ -106,19 +68,19 @@ index 3cb56595822799926a8141e60a42f5d1edfc6de5..4a82269a24baf65c62550166201a48dd
      protected LineReader buildReader(LineReaderBuilder builder) {
          builder
 -                .appName("Purpur") // Purpur
-+                .appName("Tentacles") // Purpur // Tentacles
++                .appName("Misteln") // Purpur // Misteln
                  .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-index a6e5950b5875cafd734300cdfbf58f5d3736f3c8..29b8f525dc6ef0fb93e830312ed3fea8c30222bc 100644
+index a6e5950b5875cafd734300cdfbf58f5d3736f3c8..43acbddd7f1acccd8ac7560c150cf8e2573dbd9d 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 @@ -32,6 +32,7 @@ public record ServerBuildInfoImpl(
  
      private static final String BRAND_PAPER_NAME = "Paper";
      private static final String BRAND_PURPUR_NAME = "Purpur"; // Purpur
-+    private static final String BRAND_TENTACLES_NAME = "Tentacles"; // Tentacles
++    private static final String BRAND_MISTELN_NAME = "Misteln"; // Misteln
  
      private static final String BUILD_DEV = "DEV";
  
@@ -127,10 +89,10 @@ index a6e5950b5875cafd734300cdfbf58f5d3736f3c8..29b8f525dc6ef0fb93e830312ed3fea8
              getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
                  .map(Key::key)
 -                .orElse(BRAND_PURPUR_ID), // Purpur
-+                .orElse(BRAND_TENTACLES_ID), // Purpur // Tentacles
++                .orElse(BRAND_MISTELN_ID), // Purpur
              getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
 -                .orElse(BRAND_PURPUR_NAME), // Purpur
-+                .orElse(BRAND_TENTACLES_NAME), // Purpur // Tentacles
++                .orElse(BRAND_MISTELN_NAME), // Purpur
              SharedConstants.getCurrentVersion().getId(),
              SharedConstants.getCurrentVersion().getName(),
              getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
@@ -139,12 +101,12 @@ index a6e5950b5875cafd734300cdfbf58f5d3736f3c8..29b8f525dc6ef0fb93e830312ed3fea8
      @Override
      public boolean isBrandCompatible(final @NotNull Key brandId) {
 -        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID); // Purpur
-+        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID) || brandId.equals(BRAND_PURPUR_ID); // Purpur // Tentacles
++        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID) || brandId.equals(BRAND_PURPUR_ID); // Purpur // Misteln
      }
  
      @Override
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index c366d84518979e842a6f10f969a5951539ecac93..f6345e0609f436cfae606c0114e706024bac19e9 100644
+index c366d84518979e842a6f10f969a5951539ecac93..7a04d0ee002f30e416242e45886bce71b0995ae8 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -127,7 +127,7 @@ public class CrashReport {
@@ -152,12 +114,12 @@ index c366d84518979e842a6f10f969a5951539ecac93..f6345e0609f436cfae606c0114e70602
          // Purpur start
          stringbuilder.append("// ");
 -        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!");
-+        stringbuilder.append("// DO NOT REPORT THIS TO PURPUR! REPORT TO TENTACLES INSTEAD!"); // Tentacles
++        stringbuilder.append("// DO NOT REPORT THIS TO PAPER/PURPUR! REPORT TO MISTELN INSTEAD!"); // Misteln
          // Purpur end
          stringbuilder.append("// ");
          stringbuilder.append(CrashReport.getErrorComment());
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 330bae815c0a332e3dc9fa7b224c9f92098199b9..7e59db9434a10d932c554234c54d86c9e00dfba8 100644
+index 678a448edb5e167d5d2d3d162034312b8a0bf468..f2e2f801ff89b193225bac9ca51832b6d963dd9b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -959,7 +959,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -165,12 +127,12 @@ index 330bae815c0a332e3dc9fa7b224c9f92098199b9..7e59db9434a10d932c554234c54d86c9
          org.spigotmc.WatchdogThread.doStop(); // Paper
          if (!isSameThread()) {
 -            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PURPUR)"); // Purpur
-+            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO TENTACLES)"); // Purpur // Tentacles
++            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO MISTELN)"); // Purpur // Misteln
              while (this.getRunningThread().isAlive()) {
                  this.getRunningThread().stop();
                  try {
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index ca8ae8e1c51b937dac916e0b0dc94b5e2e61efeb..632108edb4c76e141403da04381662574d5c1d89 100644
+index ca8ae8e1c51b937dac916e0b0dc94b5e2e61efeb..cd36155c08926ce20b6f65af95e23e17d6d0eac8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -503,7 +503,7 @@ public class CraftScheduler implements BukkitScheduler {
@@ -178,12 +140,12 @@ index ca8ae8e1c51b937dac916e0b0dc94b5e2e61efeb..632108edb4c76e141403da0438166257
              } else {
                  // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
 -                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur
-+                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Tentacles"); // Paper // Purpur // Tentacles
++                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Misteln"); // Paper // Purpur // Misteln
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..5e8569c0661d6cb38e8dafe47b812c7ba834dc0e 100644
+index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..9cf70675d84d9bf03e3d2c57cb038ffb693e6d94 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 @@ -11,7 +11,7 @@ public final class Versioning {
@@ -191,12 +153,12 @@ index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..5e8569c0661d6cb38e8dafe47b812c7b
          String result = "Unknown-Version";
  
 -        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Pufferfish // Purpur
-+        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.tentacles/tentacles-api/pom.properties"); // Pufferfish // Purpur // Tentacles
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.brilliantw.misteln/misteln-api/pom.properties"); // Pufferfish // Purpur // Misteln
          Properties properties = new Properties();
  
          if (stream != null) {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index a353eb9f45af7b7f9bfd92a4a89403335b841840..ccfd1cd4dc9dd62a65f7d791e78938564d8ea642 100644
+index a353eb9f45af7b7f9bfd92a4a89403335b841840..185a0cbc06824bf1bf1178a0d7bd52d89291bf5d 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -155,14 +155,14 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
@@ -204,34 +166,40 @@ index a353eb9f45af7b7f9bfd92a4a89403335b841840..ccfd1cd4dc9dd62a65f7d791e7893856
                  // Paper end
                  log.log( Level.SEVERE, "------------------------------" );
 -                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Purpur bug." ); // Paper // Purpur
-+                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Tentacles bug." ); // Paper // Purpur // Tentacles
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Misteln bug." ); // Paper // Purpur // Misteln
                  log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
                  log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
                  log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
                  log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
 -                log.log( Level.SEVERE, "If you are unsure or still think this is a Purpur bug, please report this to https://github.com/PurpurMC/Purpur/issues" ); // Purpur
-+                log.log( Level.SEVERE, "If you are unsure or still think this is a Tentacles bug, please report this to https://github.com/PurpurMC/Tentacles/issues" ); // Purpur // Tentacles
++                log.log( Level.SEVERE, "If you are unsure or still think this is a Misteln bug, please report this to https://github.com/BrillantTeam/Misteln/issues" ); // Purpur // Misteln
                  log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
 -                log.log( Level.SEVERE, "Purpur version: " + Bukkit.getServer().getVersion() ); // Purpur
-+                log.log( Level.SEVERE, "Tentacles version: " + Bukkit.getServer().getVersion() ); // Purpur // Tentacles
++                log.log( Level.SEVERE, "Misteln version: " + Bukkit.getServer().getVersion() ); // Purpur // Misteln
                  //
                  if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
                  {
-@@ -184,7 +184,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+@@ -184,12 +184,12 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                  // Paper end
                  } else
                  {
 -                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur
-+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO TENTACLES - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Tentacles
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO MISTELN - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Misteln
                      log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
                  }
                  // Paper end - Different message for short timeout
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Purpur!):" ); // Paper // Purpur
++                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Misteln!):" ); // Paper // Purpur // Misteln
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper - rewrite chunk system
+                 this.dumpTickingInfo(); // Paper - log detailed tick information
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
 @@ -205,7 +205,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
                      WatchdogThread.dumpThread( thread, log );
                  }
                  } else {
 -                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH ---"); // Purpur
-+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO TENTACLES - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Tentacles
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO MISTELN - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Misteln
                  }
  
                  log.log( Level.SEVERE, "------------------------------" );
