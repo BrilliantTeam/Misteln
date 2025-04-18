@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Sat, 19 Apr 2025 00:02:06 +0800
+Subject: [PATCH] Handle item meta attribute upgrade
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+index b6686a42fe1eb29e00907105291e9e4a0baa08e0..9a919df6c19a3a555ae023bc042167f894e93787 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
+@@ -71,6 +71,7 @@ import net.minecraft.world.item.component.Tool;
+ import net.minecraft.world.item.component.Unbreakable;
+ import net.minecraft.world.item.enchantment.ItemEnchantments;
+ import net.minecraft.world.level.block.state.BlockState;
++import org.apache.commons.lang3.EnumUtils;
+ import org.bukkit.Material;
+ import org.bukkit.attribute.Attribute;
+ import org.bukkit.attribute.AttributeModifier;
+@@ -705,6 +706,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+             }
+ 
+             Attribute attribute = CraftAttribute.stringToBukkit(attributeName);
++            // Misteln start - attribute upgrade
++            if (attribute == null) {
++                attribute = EnumUtils.getEnum(Attribute.class, attributeName);
++            }
++            // Misteln end
+             if (attribute == null) {
+                 continue;
+             }

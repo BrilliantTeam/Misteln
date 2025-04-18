@@ -1,0 +1,220 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Fri, 18 Apr 2025 23:58:56 +0800
+Subject: [PATCH] Handle various entity tag dfu upgrade
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+index 4f94f0851f6d8142be121c1c1c8563339f81b350..020954d11d6f5f2af3fb4500ea9f781a736bb023 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.collect.ImmutableMap.Builder;
+ import java.util.Map;
+ import net.minecraft.core.component.DataComponentPatch;
+@@ -7,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ 
+@@ -231,6 +234,20 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
+         return builder;
+     }
+ 
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (entityTag == null) return;
++
++            entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++        }
++    }
++    // Misteln end
++
+     @Override
+     public CraftMetaArmorStand clone() {
+         CraftMetaArmorStand clone = (CraftMetaArmorStand) super.clone();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+index 37fac2d88727d719fab101e3cf3e33bb6662a06d..2f9854d682d16696453a5f0a7f0fd4b12f3cd635 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.collect.ImmutableMap;
+ import java.util.Map;
+ import net.minecraft.core.component.DataComponentPatch;
+@@ -7,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+@@ -208,4 +211,18 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+ 
+         return builder;
+     }
++
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (entityTag == null) return;
++
++            entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++        }
++    }
++    // Misteln end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 3c19d86d30c9fb6b88deab69c1e69b22688eb05b..bd7b34fc6a2e8de2df7f662f6ba6d251b599c544 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -309,7 +309,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+     public void setVersion(int version) {
+         super.setVersion(version);
+ 
+-        if (version < 3837) {
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
+             if (internalTag == null) return;
+ 
+             internalTag = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, internalTag,
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index 37ea36bbf2278aa59ceae4894c73016d4abc19c2..772144c72fff613504dad6769ff9d6f19e24e25d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.collect.ImmutableMap.Builder;
+ import com.google.common.collect.Sets;
+ import java.util.Map;
+@@ -9,6 +11,7 @@ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ 
+@@ -134,6 +137,20 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+         return builder;
+     }
+ 
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (entityTag == null) return;
++
++            entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++        }
++    }
++    // Misteln end
++
+     @Override
+     public CraftMetaEntityTag clone() {
+         CraftMetaEntityTag clone = (CraftMetaEntityTag) super.clone();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+index ee4e9a1b077b6fbfc767d80965bd5bb6d900d80c..9dd406cf48ebded744095eab74568c64ce192c3f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableMap.Builder;
+ import com.google.common.collect.Sets;
+@@ -10,6 +12,7 @@ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+ import org.bukkit.craftbukkit.entity.CraftEntitySnapshot;
+@@ -266,6 +269,20 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+         return builder;
+     }
+ 
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (entityTag == null) return;
++
++            entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++        }
++    }
++    // Misteln end
++
+     @Override
+     public CraftMetaSpawnEgg clone() {
+         CraftMetaSpawnEgg clone = (CraftMetaSpawnEgg) super.clone();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+index fba75385923f59b03b637143064f1d5e30d43a8c..999e497c075ceae154acc712fbd7effc22643189 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.collect.ImmutableMap;
+ import java.util.Map;
+ import net.minecraft.core.component.DataComponentPatch;
+@@ -7,6 +9,7 @@ import net.minecraft.core.component.DataComponents;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
++import org.bukkit.Bukkit;
+ import org.bukkit.DyeColor;
+ import org.bukkit.Material;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+@@ -240,4 +243,18 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+ 
+         return builder;
+     }
++
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (entityTag == null) return;
++
++            entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++        }
++    }
++    // Misteln end
+ }

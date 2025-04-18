@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Fri, 18 Apr 2025 23:37:23 +0800
+Subject: [PATCH] Handle block state item meta upgrade
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 3faef745d9b5d3baaea8c20c6f8e06f7bb529665..3c19d86d30c9fb6b88deab69c1e69b22688eb05b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.base.Objects;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableMap;
+@@ -17,6 +19,7 @@ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.block.BlockState;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
+@@ -239,7 +242,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         if (this.internalTag != null) { // legacy
+             this.setBlockState(CraftMetaBlockState.getBlockState(this.material, this.internalTag));
+         }
+-        this.internalTag = null;
++        // this.internalTag = null; // Misteln - delay removal for dfu
+     }
+ 
+     @Override
+@@ -301,6 +304,26 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         return builder;
+     }
+ 
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < 3837) {
++            if (internalTag == null) return;
++
++            internalTag = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, internalTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++
++            deserializeInternal(internalTag, null);
++
++            this.setBlockState(CraftMetaBlockState.getBlockState(this.material, this.internalTag));
++        }
++
++        internalTag = null;
++    }
++    // Misteln end
++
+     @Override
+     int applyHash() {
+         final int original;
