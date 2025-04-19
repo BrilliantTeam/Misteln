@@ -1,6 +1,59 @@
-[Purpur]: https://purpurmc.org
+# Misteln | 支援 1.20.5 之後版本 ItemMeta 相容性的伺服器核心
 
-## Tentacles
-Template to create a mantainable fork of [Purpur].
+> [!NOTE]
+> 在使用這個核心之前，請務必詳細閱讀「目標」、「重要提醒」與「失效範圍」這三個部分。
 
-This readme will eventually contain instructions regarding the patch system. For now, visit Purpur's [CONTRIBUTING.md](https://github.com/PurpurMC/Purpur/blob/HEAD/CONTRIBUTING.md).
+> [!CAUTION]
+> Misteln 的開發者不對使用此核心所導致的資料遺失或其他問題負責。
+>
+> 若在使用 Misteln 後將其移除，尚未被 Misteln 處理過或未被插件回寫的 ItemMeta 將無法被正確讀取，除非相關插件已更新其資料儲存方式（例如：使用 ItemStack#serializeAsBytes 函數）。
+>
+> 詳見 `失效範圍` 欄目。
+
+## 目標
+
+因 Minecraft 1.20.5 帶來的大幅 NBT 格式改動，許多伺服器在升級後出現 ItemMeta 資料遺失的情況。  
+目前仍有不少插件依賴舊版的 ItemMeta 序列化方式，這讓升級到 1.20.5 / 1.20.6，甚至未來的 1.21+ 變得相當困難。
+
+Misteln 的主要目標，是讓伺服器能夠正確讀取並處理舊版格式的 ItemMeta，從而確保依賴舊序列化邏輯的插件仍能在新版 Minecraft 上正常運作。
+
+## 適用範圍
+
+倘若升級至 1.20.5（或更新版本）後遇到以下問題，Misteln 可適用於你的伺服器：
+
+* 插件儲存的界伏盒（Shulker Box）物品遺失了數量、附魔、物品名稱等資訊。
+* 插件儲存的物品遺失了屬性修飾（例如：攻擊力、最大生命值）。
+* 插件儲存的玩家頭顱無法顯示自訂皮膚。
+
+## 技術細節
+
+Misteln 是基於 Purpur 伺服器軟體進行分支，兼容 Paper 與 Spigot。
+
+透過注入 CraftMetaItem#setVersion 與 CraftMetaItem#deserializeInternal，
+對 internal 欄位內的 NBT 進行升級操作，並將舊版的標籤轉移到新版格式 (如 EntityTag)
+使得舊插件在 1.20.5 及以後版本的物品資料處理能如預期運作。
+
+## 重要提醒
+
+Misteln 的定位是一個**臨時方法**，可以把它想像成「葉克膜」一樣，幫助伺服器撐過 1.20.5 之後版本帶來的轉換陣痛。這**並不是**一個永久解決方案。最終的理想做法，還是讓各個插件都更新其資料處理邏輯，請參考 ItemStack#serializeAsBytes 函數。
+
+一旦你選擇使用 Misteln，就代表你接受了它帶來的「依賴性」。
+
+如前項所說，若你之後移除 Misteln，但插件本身沒更新資料儲存邏輯，尚未被更新的舊版資料將無法被正確讀取。相等於選擇用 Misteln 這層相容層，來換取當前的穩定運作。
+
+此核心是開發者為自身使用所撰寫，分享該專案是為了幫助社群，若在其他伺服器上出現問題，支援可能有限，請自行斟酌使用風險。
+
+## 失效範圍
+
+以下情況會使得在移除 Misteln，改用相同版本 Paper/Purpur 等核心後會導致 1.20.5 前的物品 ItemMeta 資料遺失:
+
+- 插件並未在安裝時讀取物品資料
+- 插件沒有回寫新版格式的資料
+
+1.20.5 後及已被 Misteln 轉檔成功、正確回寫的資料將不受影響。
+
+## 開源
+
+本專案分支於 PurpurMC 的 Tentacles 模板，並使用 MIT 許可證，
+
+惟於 `patches` 目錄下的文件使用 GPLv3 協議，還請注意。

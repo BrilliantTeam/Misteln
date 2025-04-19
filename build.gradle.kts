@@ -62,7 +62,7 @@ dependencies {
 }
 
 paperweight {
-    serverProject = project(":tentacles-server")
+    serverProject = project(":misteln-server")
 
     remapRepo = paperMavenPublicUrl
     decompileRepo = paperMavenPublicUrl
@@ -75,10 +75,10 @@ paperweight {
             baseName("Purpur")
 
             apiPatchDir = layout.projectDirectory.dir("patches/api")
-            apiOutputDir = layout.projectDirectory.dir("Tentacles-API")
+            apiOutputDir = layout.projectDirectory.dir("Misteln-API")
 
             serverPatchDir = layout.projectDirectory.dir("patches/server")
-            serverOutputDir = layout.projectDirectory.dir("Tentacles-Server")
+            serverOutputDir = layout.projectDirectory.dir("Misteln-Server")
         }
 
         patchTasks.register("generatedApi") {
@@ -91,7 +91,7 @@ paperweight {
 }
 
 tasks.generateDevelopmentBundle {
-    apiCoordinates = "org.purpurmc.tentacles:tentacles-api"
+    apiCoordinates = "org.brilliantw.misteln:misteln-api"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
@@ -102,10 +102,7 @@ tasks.generateDevelopmentBundle {
 allprojects {
     publishing {
         repositories {
-            maven("https://repo.purpurmc.org/snapshots") {
-                name = "tentacles"
-                credentials(PasswordCredentials::class)
-            }
+
         }
     }
 }
@@ -124,7 +121,7 @@ tasks.register("printMinecraftVersion") {
     }
 }
 
-tasks.register("printTentaclesVersion") {
+tasks.register("printMistelnVersion") {
     doLast {
         println(project.version)
     }
