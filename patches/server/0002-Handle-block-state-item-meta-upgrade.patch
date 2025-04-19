@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Sat, 19 Apr 2025 15:24:57 +0800
+Subject: [PATCH] Handle block state item meta upgrade
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index d688339a57f0b4f12588ced0f7860a0d77eae728..4ed7052f23ff3d9f92258ca71ba15fb2a29cf463 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -1,5 +1,7 @@
+ package org.bukkit.craftbukkit.inventory;
+ 
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+ import com.google.common.base.Objects;
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableMap;
+@@ -17,6 +19,7 @@ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.Tag;
+ import net.minecraft.world.item.component.CustomData;
+ import net.minecraft.world.level.block.entity.BlockEntity;
++import org.bukkit.Bukkit;
+ import org.bukkit.DyeColor;
+ import org.bukkit.Material;
+ import org.bukkit.block.BlockState;
+@@ -147,7 +150,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         }
+         if (this.internalTag != null) {
+             this.setBlockState(CraftMetaBlockState.getBlockState(this.material, this.internalTag)); // Paper - general item meta fixes - pass through setter
+-            this.internalTag = null;
++            // this.internalTag = null; // Misteln - delay removal for dfu
+         }
+         // Paper start - general item meta fixes - parse spigot legacy position and merge into block entity tag
+         final BlockVector legacyPosition = SerializableMeta.getObject(BlockVector.class, map, "blockPosition", true);
+@@ -223,6 +226,26 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         return builder;
+     }
+ 
++    // Misteln start - perform nbt upgrade
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++
++        if (version < Bukkit.getUnsafe().getDataVersion()) {
++            if (internalTag == null) return;
++
++            internalTag = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, internalTag,
++                    version, Bukkit.getUnsafe().getDataVersion());
++
++            deserializeInternal(internalTag, null);
++
++            this.setBlockState(CraftMetaBlockState.getBlockState(this.material, this.internalTag));
++        }
++
++        internalTag = null;
++    }
++    // Misteln end
++
+     @Override
+     int applyHash() {
+         final int original;
