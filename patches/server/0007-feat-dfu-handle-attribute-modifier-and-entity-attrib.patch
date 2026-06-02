@@ -69,6 +69,68 @@ index 00346f83e71193d1378937d51c5e846edcf7e7ba..26bd7be3a7f1907c7e3b917457e8eb18
              String string = compoundTag.getString("id");
              ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
              if (resourceLocation != null) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 4ed7052f23ff3d9f92258ca71ba15fb2a29cf463..ecc50008922d591240e685556f943449c89354c8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -201,11 +201,56 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+             this.blockEntityTag = CustomData.of(tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_TAG_CUSTOM_DATA.NBT));
+         }
+         if (tag.contains(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
+-            this.components = DataComponentMap.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT)).getOrThrow();
++            // Misteln start - upgrade attribute modifiers before codec parse (1.20.5/6 -> 1.21)
++            CompoundTag componentsTag = tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT);
++            upgradeAttributeModifiersInComponents(componentsTag);
++            // Misteln end
++            this.components = DataComponentMap.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), componentsTag).getOrThrow();
+         }
+         // Paper end - new serialization format
+     }
+ 
++    // Misteln start - upgrade attribute modifiers in component map before codec parse (1.20.5/6 -> 1.21)
++    private static void upgradeAttributeModifiersInComponents(CompoundTag components) {
++        if (components.contains("minecraft:attribute_modifiers", CraftMagicNumbers.NBT.TAG_COMPOUND)) {
++            CompoundTag attrMods = components.getCompound("minecraft:attribute_modifiers");
++            if (attrMods.contains("modifiers", CraftMagicNumbers.NBT.TAG_LIST)) {
++                upgradeModifierEntries(attrMods.getList("modifiers", CraftMagicNumbers.NBT.TAG_COMPOUND));
++            }
++        }
++        if (components.contains("minecraft:container", CraftMagicNumbers.NBT.TAG_LIST)) {
++            net.minecraft.nbt.ListTag container = components.getList("minecraft:container", CraftMagicNumbers.NBT.TAG_COMPOUND);
++            for (int i = 0; i < container.size(); i++) {
++                CompoundTag entry = container.getCompound(i);
++                if (entry.contains("item", CraftMagicNumbers.NBT.TAG_COMPOUND)) {
++                    CompoundTag item = entry.getCompound("item");
++                    if (item.contains("components", CraftMagicNumbers.NBT.TAG_COMPOUND)) {
++                        upgradeAttributeModifiersInComponents(item.getCompound("components"));
++                    }
++                }
++            }
++        }
++    }
++
++    private static void upgradeModifierEntries(net.minecraft.nbt.ListTag modifiers) {
++        for (int i = 0; i < modifiers.size(); i++) {
++            CompoundTag mod = modifiers.getCompound(i);
++            if (!mod.contains("id") && (mod.contains("uuid", CraftMagicNumbers.NBT.TAG_INT_ARRAY) || mod.contains("name", CraftMagicNumbers.NBT.TAG_STRING))) {
++                if (mod.contains("uuid", CraftMagicNumbers.NBT.TAG_INT_ARRAY)) {
++                    try {
++                        java.util.UUID uuid = net.minecraft.nbt.NbtUtils.loadUUID(mod.get("uuid"));
++                        mod.putString("id", "minecraft:" + uuid.toString());
++                    } catch (Exception ignored) {}
++                    mod.remove("uuid");
++                } else {
++                    mod.putString("id", "minecraft:" + mod.getString("name"));
++                }
++                mod.remove("name");
++            }
++        }
++    }
++    // Misteln end
++
+     @Override
+     void serializeInternal(final Map<String, Tag> internalTags) {
+         // Paper start - new serialization format
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 44b8e73f2f757f875d873c5c24c73c251db75261..4d6d64ea5cbebf32a8159d23022c28cfa59dba64 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
