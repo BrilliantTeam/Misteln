@@ -5,66 +5,77 @@ Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
  1.20.5/6 to 1.21 upgrade
 
 
-diff --git a/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-index a25d74592e89e3d6339479c6dc2b6f45d1932cfc..5d4899f216968f037e98f7a3b928433c2e99d6b7 100644
---- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-+++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-@@ -152,9 +152,57 @@ public class AttributeMap {
-         return listTag;
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+index 42ad600c6a5cb20e1d820f169f6a1a17ef3a5195..c3667006863f11203253b49cd4543a99381c7ee4 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+@@ -200,7 +200,7 @@ public class AttributeInstance {
      }
  
-+    // Misteln start - entity attribute upgrade (1.20.5/6 -> 1.21)
-+    private static CompoundTag upgradeAttributeIfNeeded(CompoundTag tag) {
-+        if (!tag.contains("id") && tag.contains("Name")) {
-+            CompoundTag up = tag.copy();
-+            up.putString("id", up.getString("Name"));
-+            up.remove("Name");
-+
-+            if (up.contains("Base")) {
-+                up.putDouble("base", up.getDouble("Base"));
-+                up.remove("Base");
+     public record Packed(Holder<Attribute> attribute, double baseValue, List<AttributeModifier> modifiers) {
+-        public static final Codec<AttributeInstance.Packed> CODEC = RecordCodecBuilder.create(
++        private static final Codec<AttributeInstance.Packed> CURRENT_CODEC = RecordCodecBuilder.create( // Misteln - DFU: renamed from CODEC, see below
+             instance -> instance.group(
+                     BuiltInRegistries.ATTRIBUTE.holderByNameCodec().fieldOf("id").forGetter(AttributeInstance.Packed::attribute),
+                     Codec.DOUBLE.fieldOf("base").orElse(0.0).forGetter(AttributeInstance.Packed::baseValue),
+@@ -208,6 +208,60 @@ public class AttributeInstance {
+                 )
+                 .apply(instance, AttributeInstance.Packed::new)
+         );
++        // Misteln start - DFU: upgrade legacy attribute data that bypassed the data converter (e.g. entity NBT merged by plugins)
++        public static final Codec<AttributeInstance.Packed> CODEC = Codec.of(CURRENT_CODEC, new com.mojang.serialization.Decoder<AttributeInstance.Packed>() {
++            @Override
++            public <T> com.mojang.serialization.DataResult<com.mojang.datafixers.util.Pair<AttributeInstance.Packed, T>> decode(final com.mojang.serialization.DynamicOps<T> ops, final T input) {
++                return CURRENT_CODEC.decode(ops, upgradeLegacy(new com.mojang.serialization.Dynamic<>(ops, input)).getValue());
 +            }
++        });
++        private static final String[] LEGACY_OPERATIONS = {"add_value", "add_multiplied_base", "add_multiplied_total"};
 +
-+            if (up.contains("Modifiers", 9)) {
-+                ListTag oldMods = up.getList("Modifiers", 10);
-+                ListTag newMods = new ListTag();
-+                for (int j = 0; j < oldMods.size(); j++) {
-+                    CompoundTag mod = oldMods.getCompound(j).copy();
-+                    if (mod.contains("UUID", 11)) {
-+                        try {
-+                            java.util.UUID uuid = net.minecraft.nbt.NbtUtils.loadUUID(mod.get("UUID"));
-+                            mod.putString("id", "minecraft:" + uuid.toString());
-+                        } catch (Exception ignored) {}
-+                        mod.remove("UUID");
-+                    } else if (mod.contains("Name")) {
-+                        mod.putString("id", "minecraft:" + mod.getString("Name"));
-+                    }
-+                    mod.remove("Name");
-+                    if (mod.contains("Amount") && !mod.contains("amount")) {
-+                        mod.putDouble("amount", mod.getDouble("Amount"));
-+                        mod.remove("Amount");
-+                    }
-+                    if (mod.contains("Operation", 3) && !mod.contains("operation")) {
-+                        String[] ops = {"add_value", "add_multiplied_base", "add_multiplied_total"};
-+                        int op = mod.getInt("Operation");
-+                        mod.putString("operation", op >= 0 && op < ops.length ? ops[op] : "add_value");
-+                        mod.remove("Operation");
-+                    }
-+                    newMods.add(mod);
-+                }
-+                up.put("modifiers", newMods);
-+                up.remove("Modifiers");
++        // attributes were Name/Base/Modifiers before 1.20.5, modifiers had a uuid and name instead of an id before 1.21
++        private static <T> com.mojang.serialization.Dynamic<T> upgradeLegacy(com.mojang.serialization.Dynamic<T> attribute) {
++            attribute = renameLegacyField(attribute, "Name", "id");
++            attribute = renameLegacyField(attribute, "Base", "base");
++            attribute = renameLegacyField(attribute, "Modifiers", "modifiers");
++            final java.util.Optional<java.util.stream.Stream<com.mojang.serialization.Dynamic<T>>> modifiers = attribute.get("modifiers").asStreamOpt().result();
++            if (modifiers.isPresent()) {
++                attribute = attribute.set("modifiers", attribute.createList(modifiers.get().map(Packed::upgradeLegacyModifier)));
 +            }
-+            return up;
++            return attribute;
 +        }
-+        return tag;
-+    }
-+    // Misteln end
 +
-     public void load(ListTag nbt) {
-         for (int i = 0; i < nbt.size(); i++) {
--            CompoundTag compound = nbt.getCompound(i);
-+            CompoundTag compound = upgradeAttributeIfNeeded(nbt.getCompound(i)); // Misteln
-             String string = compound.getString("id");
-             ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
-             if (resourceLocation != null) {
++        private static <T> com.mojang.serialization.Dynamic<T> upgradeLegacyModifier(com.mojang.serialization.Dynamic<T> modifier) {
++            final com.mojang.serialization.Dynamic<T> legacy = modifier;
++            if (legacy.get("id").result().isEmpty()) {
++                final java.util.Optional<String> path = legacy.get("uuid").read(net.minecraft.core.UUIDUtil.CODEC).result()
++                    .or(() -> legacy.get("UUID").read(net.minecraft.core.UUIDUtil.CODEC).result())
++                    .map(java.util.UUID::toString)
++                    .or(() -> legacy.get("name").asString().result().or(() -> legacy.get("Name").asString().result())
++                        .map(name -> name.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9/._-]", "_")));
++                if (path.isPresent()) {
++                    modifier = modifier.set("id", modifier.createString(ResourceLocation.withDefaultNamespace(path.get()).toString()));
++                }
++            }
++            modifier = renameLegacyField(modifier, "Amount", "amount");
++            final java.util.Optional<Number> operation = modifier.get("Operation").asNumber().result();
++            if (operation.isPresent()) {
++                modifier = modifier.remove("Operation");
++                if (modifier.get("operation").result().isEmpty()) {
++                    final int index = operation.get().intValue();
++                    modifier = modifier.set("operation", modifier.createString(index >= 0 && index < LEGACY_OPERATIONS.length ? LEGACY_OPERATIONS[index] : LEGACY_OPERATIONS[0]));
++                }
++            }
++            return modifier;
++        }
++
++        private static <T> com.mojang.serialization.Dynamic<T> renameLegacyField(final com.mojang.serialization.Dynamic<T> dynamic, final String from, final String to) {
++            final java.util.Optional<com.mojang.serialization.Dynamic<T>> value = dynamic.get(from).result();
++            if (value.isEmpty()) {
++                return dynamic;
++            }
++            final com.mojang.serialization.Dynamic<T> removed = dynamic.remove(from);
++            return removed.get(to).result().isPresent() ? removed : removed.set(to, value.get());
++        }
++        // Misteln end - DFU
+         public static final Codec<List<AttributeInstance.Packed>> LIST_CODEC = CODEC.listOf();
+     }
+ }

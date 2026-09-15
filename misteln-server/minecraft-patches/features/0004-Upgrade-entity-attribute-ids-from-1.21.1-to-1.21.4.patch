@@ -4,36 +4,36 @@ Date: Tue, 15 Sep 2026 12:11:55 +0800
 Subject: [PATCH] Upgrade entity attribute ids from 1.21.1 to 1.21.4
 
 
-diff --git a/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-index 5d4899f216968f037e98f7a3b928433c2e99d6b7..c7497fd9371e4f3751ac909ff190d8eabe5ad862 100644
---- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-+++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-@@ -198,13 +198,27 @@ public class AttributeMap {
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+index c3667006863f11203253b49cd4543a99381c7ee4..3ff646017d31bd807c8dcacae29272d1ccd769aa 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
+@@ -226,9 +226,28 @@ public class AttributeInstance {
+             if (modifiers.isPresent()) {
+                 attribute = attribute.set("modifiers", attribute.createList(modifiers.get().map(Packed::upgradeLegacyModifier)));
+             }
++            // attribute ids lost their generic./horse./player./zombie. prefix in 1.21.2 (see V4055)
++            final java.util.Optional<String> id = attribute.get("id").asString().result();
++            if (id.isPresent()) {
++                attribute = attribute.set("id", attribute.createString(upgradeAttributeId(id.get())));
++            }
+             return attribute;
          }
-         return tag;
-     }
+ 
++        private static final String[] LEGACY_ATTRIBUTE_PREFIXES = {"generic.", "horse.", "player.", "zombie."};
 +
-+    // attribute ids lost their generic./horse./player./zombie. prefix in 1.21.2 (see V4055)
-+    private static final String[] LEGACY_ATTRIBUTE_PREFIXES = {"generic.", "horse.", "player.", "zombie."};
-+
-+    private static ResourceLocation upgradeAttributeId(@javax.annotation.Nullable ResourceLocation id) {
-+        if (id != null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
-+            for (String prefix : LEGACY_ATTRIBUTE_PREFIXES) {
-+                if (id.getPath().startsWith(prefix)) {
-+                    return ResourceLocation.withDefaultNamespace(id.getPath().substring(prefix.length()));
++        private static String upgradeAttributeId(final String id) {
++            final ResourceLocation location = ResourceLocation.tryParse(id);
++            if (location != null && location.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
++                for (final String prefix : LEGACY_ATTRIBUTE_PREFIXES) {
++                    if (location.getPath().startsWith(prefix)) {
++                        return ResourceLocation.withDefaultNamespace(location.getPath().substring(prefix.length())).toString();
++                    }
 +                }
 +            }
++            return id;
 +        }
-+        return id;
-+    }
-     // Misteln end
- 
-     public void load(ListTag nbt) {
-         for (int i = 0; i < nbt.size(); i++) {
-             CompoundTag compound = upgradeAttributeIfNeeded(nbt.getCompound(i)); // Misteln
-             String string = compound.getString("id");
--            ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
-+            ResourceLocation resourceLocation = upgradeAttributeId(ResourceLocation.tryParse(string)); // Misteln
-             if (resourceLocation != null) {
-                 Util.ifElse(BuiltInRegistries.ATTRIBUTE.get(resourceLocation), reference -> {
-                     AttributeInstance instance = this.getInstance(reference);
++
+         private static <T> com.mojang.serialization.Dynamic<T> upgradeLegacyModifier(com.mojang.serialization.Dynamic<T> modifier) {
+             final com.mojang.serialization.Dynamic<T> legacy = modifier;
+             if (legacy.get("id").result().isEmpty()) {

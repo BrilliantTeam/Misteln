@@ -5,18 +5,18 @@ Subject: [PATCH] Fix shading glass and beacon
 
 
 diff --git a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index 80b0feac68813f11dc5cadc5faf413a59ad73e5b..5512eb323632f2c88be2fb61bbc0d468ff2c93b2 100644
+index c2e15c6e1c6bfc5a9d89afc9b8aa9551bad2cc8f..f56181c0afe6ac22506bfe8ab405089ae5ead66c 100644
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -65,6 +65,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
-     private List<BeaconBlockEntity.BeaconBeamSection> checkingBeamSections = Lists.newArrayList();
+@@ -69,6 +69,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+     private List<BeaconBeamOwner.Section> checkingBeamSections = new ArrayList<>();
      public int levels;
      private int lastCheckY;
 +    private boolean checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
      @Nullable
      public Holder<MobEffect> primaryPower;
      @Nullable
-@@ -178,11 +179,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -182,11 +183,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
          int y = pos.getY();
          int z = pos.getZ();
          BlockPos blockPos;
@@ -29,23 +29,23 @@ index 80b0feac68813f11dc5cadc5faf413a59ad73e5b..5512eb323632f2c88be2fb61bbc0d468
          } else {
              blockPos = new BlockPos(x, blockEntity.lastCheckY + 1, z);
          }
-@@ -208,8 +209,13 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -212,8 +213,13 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
                      }
                  }
              } else {
 -                if (level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockState.getBlock().equals(Blocks.TINTED_GLASS)) {isTintedGlass = true;} // Purpur - allow beacon effects when covered by tinted glass
--                if (beaconBeamSection == null || blockState.getLightBlock() >= 15 && !blockState.is(Blocks.BEDROCK)) {
+-                if (section == null || blockState.getLightBlock() >= 15 && !blockState.is(Blocks.BEDROCK)) {
 +                // Misteln start - Fix shading glass and beacon
 +                boolean isTintedGlassBlock = level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockState.getBlock().equals(Blocks.TINTED_GLASS); // Purpur - allow beacon effects when covered by tinted glass
 +                if (isTintedGlassBlock) {
 +                    blockEntity.checkingTintedGlass = true;
 +                }
-+                if (beaconBeamSection == null || (!isTintedGlassBlock && blockState.getLightBlock() >= 15 && !blockState.is(Blocks.BEDROCK))) {
++                if (section == null || (!isTintedGlassBlock && blockState.getLightBlock() >= 15 && !blockState.is(Blocks.BEDROCK))) {
 +                // Misteln end - Fix shading glass and beacon
                      blockEntity.checkingBeamSections.clear();
                      blockEntity.lastCheckY = height;
                      break;
-@@ -228,7 +234,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -232,7 +238,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
                  blockEntity.levels = updateBase(level, x, y, z);
              }
  
