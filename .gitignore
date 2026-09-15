@@ -24,16 +24,12 @@ nbactions.xml
 build/
 */build/
 
-# we use maven!
-build.xml
-
 # Maven
 log/
 target/
 dependency-reduced-pom.xml
 
 # various other potential build files
-build/
 bin/
 dist/
 manifest.mf
@@ -49,12 +45,14 @@ manifest.mf
 *~
 
 # other stuff
-run/
+/run
 
-build-data/
-Tentacles-API
-Tentacles-MojangAPI
-Tentacles-Server
-paper-api-generator
+/misteln-server/build.gradle.kts
+/misteln-server/src/minecraft
+/misteln-api/build.gradle.kts
+/paper-server
+/paper-api
+/purpur-server
+/purpur-api
 *.jar
 test-plugin.settings.gradle.kts

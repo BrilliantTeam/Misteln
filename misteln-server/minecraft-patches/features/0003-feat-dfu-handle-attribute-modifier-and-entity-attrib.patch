@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 15 Sep 2026 12:08:06 +0800
+Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
+ 1.20.5/6 to 1.21 upgrade
+
+
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index a25d74592e89e3d6339479c6dc2b6f45d1932cfc..5d4899f216968f037e98f7a3b928433c2e99d6b7 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -152,9 +152,57 @@ public class AttributeMap {
+         return listTag;
+     }
+ 
++    // Misteln start - entity attribute upgrade (1.20.5/6 -> 1.21)
++    private static CompoundTag upgradeAttributeIfNeeded(CompoundTag tag) {
++        if (!tag.contains("id") && tag.contains("Name")) {
++            CompoundTag up = tag.copy();
++            up.putString("id", up.getString("Name"));
++            up.remove("Name");
++
++            if (up.contains("Base")) {
++                up.putDouble("base", up.getDouble("Base"));
++                up.remove("Base");
++            }
++
++            if (up.contains("Modifiers", 9)) {
++                ListTag oldMods = up.getList("Modifiers", 10);
++                ListTag newMods = new ListTag();
++                for (int j = 0; j < oldMods.size(); j++) {
++                    CompoundTag mod = oldMods.getCompound(j).copy();
++                    if (mod.contains("UUID", 11)) {
++                        try {
++                            java.util.UUID uuid = net.minecraft.nbt.NbtUtils.loadUUID(mod.get("UUID"));
++                            mod.putString("id", "minecraft:" + uuid.toString());
++                        } catch (Exception ignored) {}
++                        mod.remove("UUID");
++                    } else if (mod.contains("Name")) {
++                        mod.putString("id", "minecraft:" + mod.getString("Name"));
++                    }
++                    mod.remove("Name");
++                    if (mod.contains("Amount") && !mod.contains("amount")) {
++                        mod.putDouble("amount", mod.getDouble("Amount"));
++                        mod.remove("Amount");
++                    }
++                    if (mod.contains("Operation", 3) && !mod.contains("operation")) {
++                        String[] ops = {"add_value", "add_multiplied_base", "add_multiplied_total"};
++                        int op = mod.getInt("Operation");
++                        mod.putString("operation", op >= 0 && op < ops.length ? ops[op] : "add_value");
++                        mod.remove("Operation");
++                    }
++                    newMods.add(mod);
++                }
++                up.put("modifiers", newMods);
++                up.remove("Modifiers");
++            }
++            return up;
++        }
++        return tag;
++    }
++    // Misteln end
++
+     public void load(ListTag nbt) {
+         for (int i = 0; i < nbt.size(); i++) {
+-            CompoundTag compound = nbt.getCompound(i);
++            CompoundTag compound = upgradeAttributeIfNeeded(nbt.getCompound(i)); // Misteln
+             String string = compound.getString("id");
+             ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
+             if (resourceLocation != null) {

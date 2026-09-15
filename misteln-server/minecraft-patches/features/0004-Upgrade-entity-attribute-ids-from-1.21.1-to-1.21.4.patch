@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 15 Sep 2026 12:11:55 +0800
+Subject: [PATCH] Upgrade entity attribute ids from 1.21.1 to 1.21.4
+
+
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index 5d4899f216968f037e98f7a3b928433c2e99d6b7..c7497fd9371e4f3751ac909ff190d8eabe5ad862 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -198,13 +198,27 @@ public class AttributeMap {
+         }
+         return tag;
+     }
++
++    // attribute ids lost their generic./horse./player./zombie. prefix in 1.21.2 (see V4055)
++    private static final String[] LEGACY_ATTRIBUTE_PREFIXES = {"generic.", "horse.", "player.", "zombie."};
++
++    private static ResourceLocation upgradeAttributeId(@javax.annotation.Nullable ResourceLocation id) {
++        if (id != null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
++            for (String prefix : LEGACY_ATTRIBUTE_PREFIXES) {
++                if (id.getPath().startsWith(prefix)) {
++                    return ResourceLocation.withDefaultNamespace(id.getPath().substring(prefix.length()));
++                }
++            }
++        }
++        return id;
++    }
+     // Misteln end
+ 
+     public void load(ListTag nbt) {
+         for (int i = 0; i < nbt.size(); i++) {
+             CompoundTag compound = upgradeAttributeIfNeeded(nbt.getCompound(i)); // Misteln
+             String string = compound.getString("id");
+-            ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
++            ResourceLocation resourceLocation = upgradeAttributeId(ResourceLocation.tryParse(string)); // Misteln
+             if (resourceLocation != null) {
+                 Util.ifElse(BuiltInRegistries.ATTRIBUTE.get(resourceLocation), reference -> {
+                     AttributeInstance instance = this.getInstance(reference);

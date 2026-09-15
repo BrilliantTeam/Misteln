@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: skyouo0727 <skyouo@skyouo.engineer>
-Date: Sat, 19 Apr 2025 15:31:39 +0800
+Date: Tue, 15 Sep 2026 12:06:46 +0800
 Subject: [PATCH] Handle various entity tag dfu upgrade
 
 
@@ -46,7 +46,7 @@ index bc7c22c477f799e49a12d7b132bd90b112d3fc56..b5127e33ad28174ed36d3bfb6ba7e574
      public CraftMetaArmorStand clone() {
          CraftMetaArmorStand clone = (CraftMetaArmorStand) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-index 3e1ef1afb61cb989e7a0d8c8c85bd894b4ef8fae..e2bdc65e72b56091efcc88b4e53533e3a5b814bb 100644
+index 3e1ef1afb61cb989e7a0d8c8c85bd894b4ef8fae..57b0671925b60c0d8fbe594ba829760d9031393b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 @@ -1,5 +1,7 @@
@@ -65,11 +65,10 @@ index 3e1ef1afb61cb989e7a0d8c8c85bd894b4ef8fae..e2bdc65e72b56091efcc88b4e53533e3
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  import org.bukkit.craftbukkit.util.CraftMagicNumbers;
  import org.bukkit.entity.Axolotl;
-@@ -202,4 +205,18 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
- 
-         return builder;
+@@ -178,6 +181,20 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+         return original != hash ? CraftMetaAxolotlBucket.class.hashCode() ^ hash : hash;
      }
-+
+ 
 +    // Misteln start - perform nbt upgrade
 +    @Override
 +    public void setVersion(int version) {
@@ -83,7 +82,10 @@ index 3e1ef1afb61cb989e7a0d8c8c85bd894b4ef8fae..e2bdc65e72b56091efcc88b4e53533e3
 +        }
 +    }
 +    // Misteln end
- }
++
+     @Override
+     public CraftMetaAxolotlBucket clone() {
+         CraftMetaAxolotlBucket clone = (CraftMetaAxolotlBucket) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
 index 37ea36bbf2278aa59ceae4894c73016d4abc19c2..772144c72fff613504dad6769ff9d6f19e24e25d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
@@ -167,7 +169,7 @@ index 633d68b727fa7d444a93865a25a5d5d56991ffef..d00c5116c4f94296abe3b1b8e5539f1c
      public CraftMetaSpawnEgg clone() {
          CraftMetaSpawnEgg clone = (CraftMetaSpawnEgg) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-index 9e2c84df3c6978b52f09a8a7e3015d3d526add19..869118e02d7a679d655a546bb05b9e98364e6b94 100644
+index 9e2c84df3c6978b52f09a8a7e3015d3d526add19..fdfaefba187ea4284311d5a84168e0936ddff46c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 @@ -1,5 +1,7 @@
@@ -186,11 +188,10 @@ index 9e2c84df3c6978b52f09a8a7e3015d3d526add19..869118e02d7a679d655a546bb05b9e98
  import org.bukkit.DyeColor;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  import org.bukkit.craftbukkit.entity.CraftTropicalFish;
-@@ -234,4 +237,18 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
- 
-         return builder;
+@@ -210,6 +213,20 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+         return original != hash ? CraftMetaTropicalFishBucket.class.hashCode() ^ hash : hash;
      }
-+
+ 
 +    // Misteln start - perform nbt upgrade
 +    @Override
 +    public void setVersion(int version) {
@@ -204,4 +205,7 @@ index 9e2c84df3c6978b52f09a8a7e3015d3d526add19..869118e02d7a679d655a546bb05b9e98
 +        }
 +    }
 +    // Misteln end
- }
++
+     @Override
+     public CraftMetaTropicalFishBucket clone() {
+         CraftMetaTropicalFishBucket clone = (CraftMetaTropicalFishBucket) super.clone();
