@@ -109,7 +109,7 @@ index ecc50008922d591240e685556f943449c89354c8..fbf0de4aaa463dfe19c599126e7256e6
      // Misteln end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 5323e087ab5789c1f1dd3b5769d69a44764d8932..7807392f1112a546e0272ddaa6120342e6c9d077 100644
+index 5323e087ab5789c1f1dd3b5769d69a44764d8932..4075320189184ef5cedbe17971e3cb7a3add1cab 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -323,6 +323,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -130,7 +130,7 @@ index 5323e087ab5789c1f1dd3b5769d69a44764d8932..7807392f1112a546e0272ddaa6120342
          }
 +        // Misteln start - DFU: fire-resistant was replaced by damage-resistant #minecraft:is_fire in 1.21.2 (see V4064)
 +        if (damageResistant == null && SerializableMeta.getBoolean(map, "fire-resistant")) {
-+            this.setDamageResistant(org.bukkit.tag.DamageTypeTags.IS_FIRE);
++            this.damageResistant = net.minecraft.tags.DamageTypeTags.IS_FIRE;
 +        }
 +        // Misteln end
  
@@ -372,10 +372,10 @@ index e3946cfb56fac13c7a9138f660bcb84c02fde713..793c3a350b24c690a36cb9648ac247a4
      public Map<String, Object> serialize() {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0347963b8b9ef808015576e6a7cbc8c22831eb2f
+index 0000000000000000000000000000000000000000..671fa39ce30d524bbb24a009a34af7c2fde7d3ca
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,248 @@
 +package org.bukkit.craftbukkit.inventory;
 +
 +import static org.junit.jupiter.api.Assertions.*;
@@ -416,6 +416,7 @@ index 0000000000000000000000000000000000000000..0347963b8b9ef808015576e6a7cbc8c2
 +    }
 +
 +    private static ItemStack load(String type, String meta) {
++        CraftItemFactory.instance(); // registers the ItemMeta serialization alias, like CraftServer does on startup
 +        String yaml = "item:\n"
 +            + "  ==: org.bukkit.inventory.ItemStack\n"
 +            + "  v: " + V1_21_1 + "\n"
@@ -472,11 +473,11 @@ index 0000000000000000000000000000000000000000..0347963b8b9ef808015576e6a7cbc8c2
 +            + "    unhandled: " + base64(unhandled) + "\n");
 +
 +        ItemMeta meta = stack.getItemMeta();
-+        assertEquals(DamageTypeTags.IS_FIRE, meta.getDamageResistant());
 +        assertEquals(4, meta.getFood().getNutrition());
 +        assertEquals(Material.BOWL, meta.getUseRemainder().getType());
 +
 +        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
++        assertEquals(net.minecraft.tags.DamageTypeTags.IS_FIRE, nms.get(DataComponents.DAMAGE_RESISTANT).types());
 +        Consumable consumable = nms.get(DataComponents.CONSUMABLE); // an apple eats in 1.6 seconds by default
 +        assertEquals(3.2F, consumable.consumeSeconds(), 1.0E-4F);
 +        assertEquals(1, consumable.onConsumeEffects().size());
