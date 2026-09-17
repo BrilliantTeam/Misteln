@@ -1,0 +1,126 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Thu, 17 Sep 2026 23:16:06 +0800
+Subject: [PATCH] Rename chain in Bukkit tool rules and knowledge books
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
+index 38b07b508205872ed43330fbde0aff7b0cefddb7..231e12dd874679691df6278e82881c4cf899663c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
++++ b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
+@@ -70,7 +70,7 @@ public final class ConfigSerializationUtil {
+                     continue;
+                 }
+ 
+-                registry.get(key).ifPresent(holderList::add);
++                registry.get(key).or(() -> mistelnRenamed(registryKey, registry, key)).ifPresent(holderList::add); // Misteln - DFU
+             }
+ 
+             return HolderSet.direct(holderList);
+@@ -81,6 +81,25 @@ public final class ConfigSerializationUtil {
+         return HolderSet.empty();
+     }
+ 
++    // Misteln start - DFU: ids in serialized components (which exist since 1.20.5) that were renamed since, like chain -> iron_chain in 1.21.9
++    private static <T> Optional<Holder.Reference<T>> mistelnRenamed(ResourceKey<Registry<T>> registryKey, Registry<T> registry, Identifier key) {
++        final ca.spottedleaf.dataconverter.minecraft.datatypes.MCValueType type;
++        if (registryKey.equals(net.minecraft.core.registries.Registries.BLOCK)) {
++            type = ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.BLOCK_NAME;
++        } else if (registryKey.equals(net.minecraft.core.registries.Registries.ITEM)) {
++            type = ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_NAME;
++        } else if (registryKey.equals(net.minecraft.core.registries.Registries.ENTITY_TYPE)) {
++            type = ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY_NAME;
++        } else {
++            return Optional.empty();
++        }
++        final Object renamed = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convert(type, key.toString(),
++            ca.spottedleaf.dataconverter.minecraft.MCVersions.V1_20_5, org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion());
++        final Identifier renamedKey = renamed instanceof String name ? Identifier.tryParse(name) : null;
++        return renamedKey == null || renamedKey.equals(key) ? Optional.empty() : registry.get(renamedKey);
++    }
++    // Misteln end - DFU: ids in serialized components (which exist since 1.20.5) that were renamed since, like chain -> iron_chain in 1.21.9
++
+     private ConfigSerializationUtil() {
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
+index e6ef13de6a1591350256275c15252349b4ba2dee..08b726aab8c5457015b04a9a70ed990d16c445cb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
+@@ -53,6 +53,20 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
+         }
+     }
+ 
++    // Misteln start - DFU: recipes are renamed with their result, like chain -> iron_chain in 1.21.9
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++        if (ItemMetaDataUpgrader.needsUpgrade(version)) {
++            this.recipes.replaceAll(recipe -> {
++                final Object renamed = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convert(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.RECIPE,
++                    recipe.toString(), version, org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion());
++                return renamed instanceof String name ? CraftNamespacedKey.fromString(name) : recipe;
++            });
++        }
++    }
++    // Misteln end - DFU: recipes are renamed with their result, like chain -> iron_chain in 1.21.9
++
+     @Override
+     void applyToItem(CraftMetaItem.Applicator tag) {
+         super.applyToItem(tag);
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+index 05af99e79e4f09ce326453cf963b9f612c438def..33292d8a143d01358bdcfb6db2c017319aaf302b 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+@@ -69,6 +69,17 @@ public class UpgradeRenamesAndFormatsTest {
+         assertEquals("minecraft:iron_chain", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("toBeDisplayed").getStringOr(0, null));
+     }
+ 
++    @Test
++    public void testPluginPlayerDataUsesDataConverter() throws Exception {
++        CompoundTag backpack = DataFixTypes.PLAYER.updateToCurrentVersion(DataFixers.getDataFixer(), snbt("{Inventory:[{Slot:0b,id:\"minecraft:diamond_pickaxe\",count:1,components:{"
++            + "\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f}]},\"minecraft:hide_additional_tooltip\":{},\"minecraft:jukebox_playable\":{song:\"minecraft:cat\"}}}]}"), V1_21_4);
++        CompoundTag components = backpack.getListOrEmpty("Inventory").getCompoundOrEmpty(0).getCompoundOrEmpty("components");
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:tool").getListOrEmpty("rules").getCompoundOrEmpty(0).getStringOr("blocks", null));
++        // the Misteln V4307 change: hide_additional_tooltip hides jukebox_playable too, as ItemFlag.HIDE_ADDITIONAL_TOOLTIP does
++        assertTrue(components.getCompoundOrEmpty("minecraft:tooltip_display").getListOrEmpty("hidden_components").stream()
++            .anyMatch(tag -> "minecraft:jukebox_playable".equals(tag.asString().orElse(null))), components.toString());
++    }
++
+     @Test
+     public void testChainRecipeAdvancementRenamed() {
+         JsonObject progress = JsonParser.parseString("{\"minecraft:recipes/decorations/chain\":{\"criteria\":{\"has_the_recipe\":\"2026-01-01 00:00:00 +0000\"},\"done\":true},\"DataVersion\":4189}").getAsJsonObject();
+@@ -112,6 +123,33 @@ public class UpgradeRenamesAndFormatsTest {
+         assertEquals("sign item", front.getListOrEmpty("messages").getCompoundOrEmpty(0).getStringOr("text", null), front.toString());
+     }
+ 
++    @Test
++    public void testChainRenamedInBukkitMeta() {
++        ItemStack pickaxe = ItemMetaDataUpgradeTest.load(V1_21_4, "DIAMOND_PICKAXE", ""
++            + "    meta-type: UNSPECIFIC\n"
++            + "    tool:\n"
++            + "      ==: Tool\n"
++            + "      default-mining-speed: 2.5\n"
++            + "      damage-per-block: 3\n"
++            + "      rules:\n"
++            + "      - ==: ToolRule\n"
++            + "        blocks:\n"
++            + "        - minecraft:chain\n"
++            + "        speed: 12.0\n"
++            + "        correct-for-drops: true\n");
++        var rules = pickaxe.getItemMeta().getTool().getRules();
++        assertEquals(1, rules.size());
++        assertEquals(java.util.List.of(org.bukkit.Material.IRON_CHAIN), java.util.List.copyOf(rules.get(0).getBlocks()));
++
++        ItemStack book = ItemMetaDataUpgradeTest.load(V1_21_4, "KNOWLEDGE_BOOK", ""
++            + "    meta-type: KNOWLEDGE_BOOK\n"
++            + "    Recipes:\n"
++            + "    - minecraft:chain\n"
++            + "    - minecraft:stick\n");
++        assertEquals(java.util.List.of(org.bukkit.NamespacedKey.minecraft("iron_chain"), org.bukkit.NamespacedKey.minecraft("stick")),
++            ((org.bukkit.inventory.meta.KnowledgeBookMeta) book.getItemMeta()).getRecipes());
++    }
++
+     @Test
+     public void testRemovedServerPropertiesAreRemembered() {
+         Boolean pvp = DedicatedServerProperties.mistelnLegacyPvp;

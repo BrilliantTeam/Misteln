@@ -1,0 +1,86 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Thu, 17 Sep 2026 23:07:18 +0800
+Subject: [PATCH] Rename chain inside components, recipe books and advancements
+
+
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+index 0ced00bda1554598d6ff7219a0606c01724ede50..bae80993f493b749f1174b6a9f2dd8421d350588 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+@@ -219,7 +219,43 @@ public final class V4307 {
+                 return null;
+             }
+         });
++
++        // Misteln start - walk the other components that name blocks, items or recipes, so renames like chain -> iron_chain reach them
++        MCTypeRegistry.DATA_COMPONENTS.addStructureWalker(VERSION, (final MapType root, final long fromVersion, final long toVersion) -> {
++            final MapType tool = root.getMap("minecraft:tool");
++            final ListType rules = tool == null ? null : tool.getListUnchecked("rules");
++            if (rules != null) {
++                for (int i = 0, len = rules.size(); i < len; ++i) {
++                    mistelnConvertHolderSet(MCTypeRegistry.BLOCK_NAME, rules.getMap(i, null), "blocks", fromVersion, toVersion);
++                }
++            }
++            mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:repairable"), "items", fromVersion, toVersion);
++            mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:lock"), "items", fromVersion, toVersion);
++            WalkerUtils.convertKeys(MCTypeRegistry.BLOCK_NAME, root, "minecraft:debug_stick_state", fromVersion, toVersion);
++            WalkerUtils.convertList(MCTypeRegistry.RECIPE, root, "minecraft:recipes", fromVersion, toVersion);
++            return null;
++        });
++        // a container's lock predicate; the only tile entity structure walker list is the one of V99
++        MCTypeRegistry.TILE_ENTITY.addStructureWalker(V99.VERSION, (final MapType data, final long fromVersion, final long toVersion) -> {
++            mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, data.getMap("lock"), "items", fromVersion, toVersion);
++            return null;
++        });
++        // Misteln end - walk the other components that name blocks, items or recipes, so renames like chain -> iron_chain reach them
++    }
++
++    // Misteln start - a holder set is a single id, a tag or a list of ids
++    private static void mistelnConvertHolderSet(final ca.spottedleaf.dataconverter.minecraft.datatypes.MCValueType type, final MapType data, final String path,
++                                                final long fromVersion, final long toVersion) {
++        if (data == null) {
++            return;
++        }
++        if (data.hasKey(path, ObjectType.LIST)) {
++            WalkerUtils.convertList(type, data, path, fromVersion, toVersion);
++        } else {
++            WalkerUtils.convert(type, data, path, fromVersion, toVersion);
++        }
+     }
++    // Misteln end - a holder set is a single id, a tag or a list of ids
+ 
+     private V4307() {}
+ }
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4541.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4541.java
+index d999cb8be534fe638320f704ca7affefccaa1d8d..b4dd73090d823b756452de816857414fc2bc82e0 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V4541.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4541.java
+@@ -3,6 +3,7 @@ package ca.spottedleaf.dataconverter.minecraft.versions;
+ import ca.spottedleaf.dataconverter.minecraft.MCVersions;
+ import ca.spottedleaf.dataconverter.minecraft.converters.blockname.ConverterAbstractBlockRename;
+ import ca.spottedleaf.dataconverter.minecraft.converters.itemname.ConverterAbstractItemRename;
++import ca.spottedleaf.dataconverter.minecraft.converters.recipe.ConverterAbstractRecipeRename;
+ import java.util.HashMap;
+ import java.util.Map;
+ 
+@@ -19,6 +20,7 @@ public final class V4541 {
+     public static void register() {
+         ConverterAbstractBlockRename.register(VERSION, CHAIN_RENAME::get);
+         ConverterAbstractItemRename.register(VERSION, CHAIN_RENAME::get);
++        ConverterAbstractRecipeRename.register(VERSION, CHAIN_RENAME::get); // Misteln - the recipe was renamed too, it is in recipe books and knowledge books
+     }
+ 
+     private V4541() {}
+diff --git a/net/minecraft/util/datafix/DataFixers.java b/net/minecraft/util/datafix/DataFixers.java
+index 79685009e9ba6463ad27f45b70bed9b2b922ccda..06156bb49d12bf3544a68a0b4601589673ed066a 100644
+--- a/net/minecraft/util/datafix/DataFixers.java
++++ b/net/minecraft/util/datafix/DataFixers.java
+@@ -1589,6 +1589,7 @@ public class DataFixers {
+         Schema schema275 = builder.addSchema(4541, SAME_NAMESPACED);
+         builder.addFixer(BlockRenameFix.create(schema275, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
+         builder.addFixer(ItemRenameFix.create(schema275, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
++        builder.addFixer(new AdvancementsRenameFix(schema275, false, "Rename chain recipe advancement", createRenamer("minecraft:recipes/decorations/chain", "minecraft:recipes/decorations/iron_chain"))); // Misteln - the recipe was renamed with the block
+         Schema schema276 = builder.addSchema(4543, V4543::new);
+         builder.addFixer(new AddNewChoices(schema276, "Added Mannequin", References.ENTITY));
+         Schema schema277 = builder.addSchema(4544, SAME_NAMESPACED);

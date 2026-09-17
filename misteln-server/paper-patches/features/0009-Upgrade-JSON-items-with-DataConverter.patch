@@ -1,0 +1,218 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Thu, 17 Sep 2026 23:07:18 +0800
+Subject: [PATCH] Upgrade JSON items with DataConverter
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 89d8e918f5e0242c7aa10b3e78382130a4631d00..2505494734d48390b1efc89fa7257f83631cec6f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -640,12 +640,58 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     public ItemStack deserializeItemFromJson(com.google.gson.JsonObject data) throws IllegalArgumentException {
+         Preconditions.checkNotNull(data, "null cannot be deserialized");
+ 
++        // Misteln start - upgrade JSON items with DataConverter like the other item formats, so they get the same conversions
+         final int dataVersion = data.get("DataVersion").getAsInt();
+-        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
+-        data = (com.google.gson.JsonObject) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
+-        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
++        final CompoundTag compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), (CompoundTag) mistelnJsonToNbt(null, data), dataVersion, this.getDataVersion());
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
++            CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), compound
++        ).getOrThrow(IllegalArgumentException::new));
++        // Misteln end - upgrade JSON items with DataConverter like the other item formats, so they get the same conversions
++    }
++
++    // Misteln start - JSON items keep custom and entity data as SNBT to preserve the NBT types, the rest maps to the closest tag
++    private static final Set<String> MISTELN_SNBT_KEYS = Set.of("minecraft:custom_data", "minecraft:block_entity_data", "minecraft:entity_data", "minecraft:bucket_entity_data", "entity_data");
++
++    private static Tag mistelnJsonToNbt(final @org.jspecify.annotations.Nullable String key, final JsonElement json) {
++        if (json instanceof com.google.gson.JsonObject object) {
++            final CompoundTag tag = new CompoundTag();
++            for (final Map.Entry<String, JsonElement> entry : object.entrySet()) {
++                if (!entry.getValue().isJsonNull()) {
++                    tag.put(entry.getKey(), mistelnJsonToNbt(entry.getKey(), entry.getValue()));
++                }
++            }
++            return tag;
++        }
++        if (json instanceof com.google.gson.JsonArray array) {
++            final net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
++            for (final JsonElement element : array) {
++                list.add(mistelnJsonToNbt(null, element));
++            }
++            return list;
++        }
++        final com.google.gson.JsonPrimitive primitive = json.getAsJsonPrimitive();
++        if (primitive.isBoolean()) {
++            return net.minecraft.nbt.ByteTag.valueOf(primitive.getAsBoolean());
++        }
++        if (primitive.isNumber()) {
++            final String number = primitive.getAsString();
++            if (number.indexOf('.') < 0 && number.indexOf('e') < 0 && number.indexOf('E') < 0) {
++                final long value = primitive.getAsLong();
++                return value == (int) value ? net.minecraft.nbt.IntTag.valueOf((int) value) : net.minecraft.nbt.LongTag.valueOf(value);
++            }
++            return net.minecraft.nbt.DoubleTag.valueOf(primitive.getAsDouble());
++        }
++        final String text = primitive.getAsString();
++        if (key != null && MISTELN_SNBT_KEYS.contains(key)) {
++            try {
++                return TagParser.parseCompoundFully(text);
++            } catch (final com.mojang.brigadier.exceptions.CommandSyntaxException ignored) {
++                // not SNBT, keep the string
++            }
++        }
++        return StringTag.valueOf(text);
+     }
++    // Misteln end - JSON items keep custom and entity data as SNBT to preserve the NBT types, the rest maps to the closest tag
+ 
+     @Override
+     public byte[] serializeEntity(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..05af99e79e4f09ce326453cf963b9f612c438def
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+@@ -0,0 +1,139 @@
++package org.bukkit.craftbukkit.inventory;
++
++import static org.junit.jupiter.api.Assertions.*;
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import com.mojang.serialization.Dynamic;
++import com.mojang.serialization.JsonOps;
++import java.io.ByteArrayOutputStream;
++import java.util.Properties;
++import net.minecraft.SharedConstants;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.TagParser;
++import net.minecraft.server.dedicated.DedicatedServerProperties;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.util.datafix.DataFixers;
++import net.minecraft.world.level.block.entity.BlockEntityType;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++// Misteln - upgrades from 1.21.4 (data version 4189) that vanilla and Paper leave broken: the chain rename inside components,
++// recipe books and advancements, JSON items, and the server.properties values that became game rules
++@AllFeatures
++public class UpgradeRenamesAndFormatsTest {
++
++    private static final int V1_21_4 = 4189;
++    private static final int CURRENT = SharedConstants.getCurrentVersion().dataVersion().version();
++
++    private static CompoundTag snbt(String data) throws Exception {
++        return TagParser.parseCompoundFully(data);
++    }
++
++    private static CompoundTag convert(ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType type, String data) throws Exception {
++        return MCDataConverter.convertTag(type, snbt(data), V1_21_4, CURRENT);
++    }
++
++    @Test
++    public void testChainRenamedInsideComponents() throws Exception {
++        CompoundTag components = convert(MCTypeRegistry.ITEM_STACK, "{id:\"minecraft:diamond_pickaxe\",count:1,components:{"
++            + "\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f,correct_for_drops:1b},{blocks:[\"minecraft:stone\",\"minecraft:chain\"],speed:2.0f},{blocks:\"#minecraft:logs\",speed:3.0f}]},"
++            + "\"minecraft:repairable\":{items:\"minecraft:chain\"},"
++            + "\"minecraft:lock\":{items:[\"minecraft:chain\"]},"
++            + "\"minecraft:debug_stick_state\":{\"minecraft:chain\":\"axis\"},"
++            + "\"minecraft:recipes\":[\"minecraft:chain\"]}}").getCompoundOrEmpty("components");
++
++        CompoundTag tool = components.getCompoundOrEmpty("minecraft:tool");
++        assertEquals("minecraft:iron_chain", tool.getListOrEmpty("rules").getCompoundOrEmpty(0).getStringOr("blocks", null));
++        assertEquals("minecraft:iron_chain", tool.getListOrEmpty("rules").getCompoundOrEmpty(1).getListOrEmpty("blocks").getStringOr(1, null));
++        assertEquals("#minecraft:logs", tool.getListOrEmpty("rules").getCompoundOrEmpty(2).getStringOr("blocks", null));
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:repairable").getStringOr("items", null));
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:lock").getListOrEmpty("items").getStringOr(0, null));
++        assertTrue(components.getCompoundOrEmpty("minecraft:debug_stick_state").contains("minecraft:iron_chain"));
++        assertEquals("minecraft:iron_chain", components.getListOrEmpty("minecraft:recipes").getStringOr(0, null));
++    }
++
++    @Test
++    public void testChainRenamedInContainerLockAndRecipeBook() throws Exception {
++        CompoundTag chest = convert(MCTypeRegistry.TILE_ENTITY, "{id:\"minecraft:chest\",x:0,y:0,z:0,lock:{items:\"minecraft:chain\"},Items:[]}");
++        assertEquals("minecraft:iron_chain", chest.getCompoundOrEmpty("lock").getStringOr("items", null));
++
++        CompoundTag player = convert(MCTypeRegistry.PLAYER, "{recipeBook:{recipes:[\"minecraft:chain\",\"minecraft:stick\"],toBeDisplayed:[\"minecraft:chain\"]}}");
++        assertEquals("minecraft:iron_chain", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("recipes").getStringOr(0, null));
++        assertEquals("minecraft:stick", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("recipes").getStringOr(1, null));
++        assertEquals("minecraft:iron_chain", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("toBeDisplayed").getStringOr(0, null));
++    }
++
++    @Test
++    public void testChainRecipeAdvancementRenamed() {
++        JsonObject progress = JsonParser.parseString("{\"minecraft:recipes/decorations/chain\":{\"criteria\":{\"has_the_recipe\":\"2026-01-01 00:00:00 +0000\"},\"done\":true},\"DataVersion\":4189}").getAsJsonObject();
++        JsonObject upgraded = DataFixTypes.ADVANCEMENTS.update(DataFixers.getDataFixer(), new Dynamic<>(JsonOps.INSTANCE, progress), V1_21_4, CURRENT).getValue().getAsJsonObject();
++        assertTrue(upgraded.has("minecraft:recipes/decorations/iron_chain"), upgraded.toString());
++        assertFalse(upgraded.has("minecraft:recipes/decorations/chain"), upgraded.toString());
++    }
++
++    private static void assertJsonMatchesNbt(String json, String nbt) throws Exception {
++        CompoundTag tag = snbt(nbt);
++        tag.putInt("DataVersion", V1_21_4);
++        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
++        NbtIo.writeCompressed(tag, bytes);
++        ItemStack fromBytes = CraftMagicNumbers.INSTANCE.deserializeItem(bytes.toByteArray());
++        ItemStack fromJson = CraftMagicNumbers.INSTANCE.deserializeItemFromJson(JsonParser.parseString(json).getAsJsonObject());
++        assertTrue(net.minecraft.world.item.ItemStack.matches(CraftItemStack.unwrap(fromBytes), CraftItemStack.unwrap(fromJson)), "json " + CraftItemStack.unwrap(fromJson).getComponentsPatch() + " bytes " + CraftItemStack.unwrap(fromBytes).getComponentsPatch());
++    }
++
++    @Test
++    public void testJsonItemsUpgradeLikeBytes() throws Exception {
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:diamond_pickaxe\",\"count\":1,\"components\":{\"minecraft:tool\":{\"rules\":[{\"blocks\":\"minecraft:chain\",\"speed\":12.0,\"correct_for_drops\":true}],\"default_mining_speed\":2.5,\"damage_per_block\":3}},\"DataVersion\":4189}",
++            "{id:\"minecraft:diamond_pickaxe\",count:1,components:{\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f,correct_for_drops:1b}],default_mining_speed:2.5f,damage_per_block:3}}}");
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:diamond_sword\",\"count\":1,\"components\":{\"minecraft:enchantments\":{\"levels\":{\"minecraft:sharpness\":5},\"show_in_tooltip\":false},\"minecraft:hide_additional_tooltip\":{},\"minecraft:custom_data\":\"{PublicBukkitValues:{\\\"p:i\\\":42,\\\"p:l\\\":5L,\\\"p:b\\\":[B;1B,2B]}}\"},\"DataVersion\":4189}",
++            "{id:\"minecraft:diamond_sword\",count:1,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5},show_in_tooltip:0b},\"minecraft:hide_additional_tooltip\":{},\"minecraft:custom_data\":{PublicBukkitValues:{\"p:i\":42,\"p:l\":5L,\"p:b\":[B;1B,2B]}}}}");
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:beehive\",\"count\":1,\"components\":{\"minecraft:bees\":[{\"entity_data\":\"{id:\\\"minecraft:bee\\\",CustomName:'\\\"bee\\\"'}\",\"ticks_in_hive\":3,\"min_ticks_in_hive\":600}]},\"DataVersion\":4189}",
++            "{id:\"minecraft:beehive\",count:1,components:{\"minecraft:bees\":[{entity_data:{id:\"minecraft:bee\",CustomName:'\"bee\"'},ticks_in_hive:3,min_ticks_in_hive:600}]}}");
++    }
++
++    @Test
++    public void testJsonSignItemTextIsConverted() {
++        ItemStack sign = CraftMagicNumbers.INSTANCE.deserializeItemFromJson(JsonParser.parseString(
++            "{\"id\":\"minecraft:oak_sign\",\"count\":1,\"components\":{\"minecraft:block_entity_data\":\"{back_text:{color:\\\"black\\\",has_glowing_text:0b,messages:['\\\"\\\"','\\\"back\\\"','\\\"\\\"','\\\"\\\"']},front_text:{color:\\\"black\\\",has_glowing_text:0b,messages:['{\\\"color\\\":\\\"red\\\",\\\"text\\\":\\\"sign item\\\"}','\\\"\\\"','\\\"\\\"','\\\"\\\"']},id:\\\"minecraft:sign\\\",is_waxed:1b}\"},\"DataVersion\":4189}"
++        ).getAsJsonObject());
++        var data = CraftItemStack.unwrap(sign).get(DataComponents.BLOCK_ENTITY_DATA);
++        assertNotNull(data);
++        assertEquals(BlockEntityType.SIGN, data.type());
++        CompoundTag front = data.copyTagWithoutId().getCompoundOrEmpty("front_text");
++        assertEquals("sign item", front.getListOrEmpty("messages").getCompoundOrEmpty(0).getStringOr("text", null), front.toString());
++    }
++
++    @Test
++    public void testRemovedServerPropertiesAreRemembered() {
++        Boolean pvp = DedicatedServerProperties.mistelnLegacyPvp;
++        Boolean spawnMonsters = DedicatedServerProperties.mistelnLegacySpawnMonsters;
++        Boolean commandBlocks = DedicatedServerProperties.mistelnLegacyEnableCommandBlock;
++        try {
++            Properties properties = new Properties();
++            properties.setProperty("pvp", "false");
++            properties.setProperty("spawn-monsters", "false");
++            properties.setProperty("enable-command-block", "false");
++            DedicatedServerProperties first = new DedicatedServerProperties(properties, null);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyPvp);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacySpawnMonsters);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyEnableCommandBlock);
++            assertFalse(first.properties.containsKey("pvp"), "a removed property must not be written back");
++
++            new DedicatedServerProperties(first.properties, null); // a reload no longer has them
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyPvp);
++        } finally {
++            DedicatedServerProperties.mistelnLegacyPvp = pvp;
++            DedicatedServerProperties.mistelnLegacySpawnMonsters = spawnMonsters;
++            DedicatedServerProperties.mistelnLegacyEnableCommandBlock = commandBlocks;
++        }
++    }
++}
