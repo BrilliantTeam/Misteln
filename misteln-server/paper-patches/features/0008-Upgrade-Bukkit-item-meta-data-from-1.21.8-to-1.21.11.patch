@@ -205,7 +205,7 @@ index d4b67ca67f3f181341da7f687534b46e12b0f664..e06a66be88c229aeb3c269f871e1aef9
          return version < CraftMagicNumbers.INSTANCE.getDataVersion();
      }
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-index dc859fd915ba16b46d281ba0d8b21b630703e980..76675c0d92fa323f7fbbff357a738c149461a7c1 100644
+index dc859fd915ba16b46d281ba0d8b21b630703e980..4769645aea33cc131394bdd3674ca6d5e15d1c78 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 @@ -27,12 +27,13 @@ import org.bukkit.support.environment.AllFeatures;
@@ -223,7 +223,7 @@ index dc859fd915ba16b46d281ba0d8b21b630703e980..76675c0d92fa323f7fbbff357a738c14
  
      static String base64(CompoundTag tag) throws IOException {
          ByteArrayOutputStream buf = new ByteArrayOutputStream();
-@@ -470,4 +471,62 @@ public class ItemMetaDataUpgradeTest {
+@@ -470,4 +471,69 @@ public class ItemMetaDataUpgradeTest {
          assertFalse(apiNms.get(DataComponents.BUCKET_ENTITY_DATA).copyTag().contains("Variant"));
          assertEquals(api, CraftItemStack.asBukkitCopy(apiNms), "variant component round trip");
      }
@@ -244,14 +244,17 @@ index dc859fd915ba16b46d281ba0d8b21b630703e980..76675c0d92fa323f7fbbff357a738c14
 +        unhandled.put("minecraft:container", container);
 +        unhandled.put("minecraft:consumable", consumable);
 +
-+        ItemStack stack = load(V1_21_8, "CHAIN", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    unhandled: " + base64(unhandled) + "\n");
++        // 1.21.4 servers upgrade straight to this version, without re-saving on 1.21.8 first
++        for (int version : new int[]{V1_21_4, V1_21_8}) {
++            ItemStack stack = load(version, "CHAIN", ""
++                + "    meta-type: UNSPECIFIC\n"
++                + "    unhandled: " + base64(unhandled) + "\n");
 +
-+        assertEquals(Material.IRON_CHAIN, stack.getType(), "chain -> iron_chain");
-+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        assertEquals(net.minecraft.world.item.Items.IRON_CHAIN, nms.get(DataComponents.CONTAINER).copyOne().getItem(), "nested chain -> iron_chain");
-+        assertEquals(net.minecraft.world.item.ItemUseAnimation.TRIDENT, nms.get(DataComponents.CONSUMABLE).animation(), "the old spear animation is the trident one");
++            assertEquals(Material.IRON_CHAIN, stack.getType(), "chain -> iron_chain from " + version);
++            net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
++            assertEquals(net.minecraft.world.item.Items.IRON_CHAIN, nms.get(DataComponents.CONTAINER).copyOne().getItem(), "nested chain -> iron_chain from " + version);
++            assertEquals(net.minecraft.world.item.ItemUseAnimation.TRIDENT, nms.get(DataComponents.CONSUMABLE).animation(), "the old spear animation is the trident one from " + version);
++        }
 +    }
 +
 +    @Test
@@ -260,23 +263,27 @@ index dc859fd915ba16b46d281ba0d8b21b630703e980..76675c0d92fa323f7fbbff357a738c14
 +        frame.putBoolean("Invisible", true);
 +        CompoundTag frameInternal = new CompoundTag();
 +        frameInternal.put("EntityTag", frame);
-+        ItemStack frameStack = load(V1_21_8, "ITEM_FRAME", ""
-+            + "    meta-type: ENTITY_TAG\n"
-+            + "    internal: " + base64(frameInternal) + "\n");
-+        net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> frameData = CraftItemStack.asNMSCopy(frameStack).get(DataComponents.ENTITY_DATA);
-+        assertEquals(net.minecraft.world.entity.EntityType.ITEM_FRAME, frameData.type());
-+        assertTrue(frameData.copyTagWithoutId().getBooleanOr("Invisible", false));
-+
 +        CompoundTag egg = new CompoundTag();
 +        egg.putBoolean("NoAI", true);
 +        CompoundTag eggInternal = new CompoundTag();
 +        eggInternal.put("entity-tag", egg);
-+        ItemStack eggStack = load(V1_21_8, "PIG_SPAWN_EGG", ""
-+            + "    meta-type: SPAWN_EGG\n"
-+            + "    internal: " + base64(eggInternal) + "\n");
-+        net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> eggData = CraftItemStack.asNMSCopy(eggStack).get(DataComponents.ENTITY_DATA);
-+        assertEquals(net.minecraft.world.entity.EntityType.PIG, eggData.type());
-+        assertTrue(eggData.copyTagWithoutId().getBooleanOr("NoAI", false));
++
++        // 1.21.4 servers upgrade straight to this version, without re-saving on 1.21.8 first
++        for (int version : new int[]{V1_21_4, V1_21_8}) {
++            ItemStack frameStack = load(version, "ITEM_FRAME", ""
++                + "    meta-type: ENTITY_TAG\n"
++                + "    internal: " + base64(frameInternal) + "\n");
++            net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> frameData = CraftItemStack.asNMSCopy(frameStack).get(DataComponents.ENTITY_DATA);
++            assertEquals(net.minecraft.world.entity.EntityType.ITEM_FRAME, frameData.type(), "from " + version);
++            assertTrue(frameData.copyTagWithoutId().getBooleanOr("Invisible", false), "from " + version);
++
++            ItemStack eggStack = load(version, "PIG_SPAWN_EGG", ""
++                + "    meta-type: SPAWN_EGG\n"
++                + "    internal: " + base64(eggInternal) + "\n");
++            net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> eggData = CraftItemStack.asNMSCopy(eggStack).get(DataComponents.ENTITY_DATA);
++            assertEquals(net.minecraft.world.entity.EntityType.PIG, eggData.type(), "from " + version);
++            assertTrue(eggData.copyTagWithoutId().getBooleanOr("NoAI", false), "from " + version);
++        }
 +
 +        org.bukkit.inventory.meta.SpawnEggMeta meta = (org.bukkit.inventory.meta.SpawnEggMeta) new ItemStack(Material.ZOMBIE_SPAWN_EGG).getItemMeta();
 +        meta.setCustomSpawnedType(org.bukkit.entity.EntityType.PIG);
