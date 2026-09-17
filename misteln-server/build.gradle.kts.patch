@@ -1,6 +1,6 @@
 --- a/purpur-server/build.gradle.kts
 +++ b/purpur-server/build.gradle.kts
-@@ -29,6 +_,7 @@
+@@ -25,6 +_,7 @@
  
      // Purpur start - Rebrand
      val purpur = forks.register("purpur") {
@@ -8,7 +8,7 @@
          upstream.patchDir("paperServer") {
              upstreamPath = "paper-server"
              excludes = setOf("src/minecraft", "patches", "build.gradle.kts")
-@@ -36,7 +_,23 @@
+@@ -32,7 +_,23 @@
              outputDir = rootDirectory.dir("paper-server")
          }
      }
@@ -33,7 +33,7 @@
      // Purpur end - Rebrand
  
      spigot {
-@@ -125,14 +_,19 @@
+@@ -122,14 +_,19 @@
      main {
          java { srcDir("../paper-server/src/main/java") }
          resources { srcDir("../paper-server/src/main/resources") }
@@ -53,16 +53,16 @@
  }
  // Purpur end - Rebrand
  configurations.named(log4jPlugins.compileClasspathConfigurationName) {
-@@ -156,7 +_,7 @@
+@@ -154,7 +_,7 @@
  }
  
  dependencies {
 -    implementation(project(":purpur-api")) // Purpur
 +    implementation(project(":misteln-api")) // Misteln
-     implementation("ca.spottedleaf:concurrentutil:0.0.3")
+     implementation("ca.spottedleaf:concurrentutil:0.0.8")
      implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
      implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
-@@ -231,14 +_,14 @@
+@@ -229,14 +_,14 @@
          val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",

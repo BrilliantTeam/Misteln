@@ -5,7 +5,7 @@ Subject: [PATCH] Handle entity tag migration
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
-index 86481ac780f5a6164b6e5b80a947b5f7b5f3d0a4..e460be74b501e3afa506dc59852c1993fe32233a 100644
+index f9b7198be4d79016f72dafe4b9f06d7f660608d1..96c6b992b4d2ca4a5843d2c78f51783c9ddb1a14 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 @@ -87,6 +87,13 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
@@ -23,10 +23,10 @@ index 86481ac780f5a6164b6e5b80a947b5f7b5f3d0a4..e460be74b501e3afa506dc59852c1993
              if (!entityTag.contains(ENTITY_ID.NBT)) entityTag.putString(ENTITY_ID.NBT, EntityType.getKey(EntityType.ARMOR_STAND).toString()); // fixup legacy armorstand metas that did not include this.
              this.entityTag = entityTag;
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-index bbb6c4934327e838bb3e4f0eb58ceb21d408e452..6af9eeadd8fd3315e8673838c391c0d26e964e4f 100644
+index d1af96d8649e7c951679f369731d5ef8ac24314c..cbe9de31680a6b5f0170f71fcbfec1706fc74b36 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-@@ -61,6 +61,13 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+@@ -63,6 +63,13 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
      void deserializeInternal(CompoundTag tag, Object context) {
          super.deserializeInternal(tag, context);
  
@@ -40,26 +40,8 @@ index bbb6c4934327e838bb3e4f0eb58ceb21d408e452..6af9eeadd8fd3315e8673838c391c0d2
          this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
          this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
      }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-index f257caf7f933f0b61f6f5f999f984ba22286eda6..b26c305a9d2662bb8e4139fd8e1fae4851b4654d 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-@@ -55,6 +55,13 @@ public class CraftMetaEntityTag extends CraftMetaItem {
-     void deserializeInternal(CompoundTag tag, Object context) {
-         super.deserializeInternal(tag, context);
- 
-+        // Misteln start - merge EntityTag to entity-tag
-+        if (tag.contains("EntityTag")) {
-+            tag.put(CraftMetaEntityTag.ENTITY_TAG.NBT, tag.getCompoundOrEmpty("EntityTag"));
-+            tag.remove("EntityTag");
-+        }
-+        // Misteln end
-+
-         this.entityTag = tag.getCompound(CraftMetaEntityTag.ENTITY_TAG.NBT).orElse(this.entityTag);
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
-index fe3f45fcdd8981102b6e85eb1895139289520bd5..f64bc8657e740bb1e359d264f2e91a422d95243e 100644
+index cdbdf46d38f5a2c288cb93dca2f5c95e313a9f6d..2b856c56b77786cc26d363c45b941be21c372d53 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 @@ -53,6 +53,13 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
@@ -77,10 +59,10 @@ index fe3f45fcdd8981102b6e85eb1895139289520bd5..f64bc8657e740bb1e359d264f2e91a42
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-index 931497bb13396e5ef55b3bde0ad1feb40ee855d2..72b5c2ae3a72cc303b7e8e5ab920112a5da7a8cc 100644
+index 4fdd196c0bb603127d6838198bc1b69464a8b60e..05b2de659825f765c642da3672491033fe83a4b1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-@@ -63,6 +63,13 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+@@ -65,6 +65,13 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
      void deserializeInternal(CompoundTag tag, Object context) {
          super.deserializeInternal(tag, context);
  

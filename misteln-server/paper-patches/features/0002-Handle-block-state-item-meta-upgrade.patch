@@ -5,10 +5,10 @@ Subject: [PATCH] Handle block state item meta upgrade
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index a0a9b1c4f1eaba1add608760b91fec8d2e1976f7..f0e04bf3007bdbe968a06707676b43536b56ce9b 100644
+index 4a8fbba451afb8d22fc9ae973911d179a8c81aeb..20e13a8ddc69f18ee154ddf9208124fffe593c8a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -140,7 +140,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -142,7 +142,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          this.material = material != null ? material : Material.AIR;
          if (this.internalTag != null) {
              this.setBlockState(CraftMetaBlockState.getBlockState(this.material, this.internalTag)); // Paper - general item meta fixes - pass through setter
@@ -17,7 +17,7 @@ index a0a9b1c4f1eaba1add608760b91fec8d2e1976f7..f0e04bf3007bdbe968a06707676b4353
          }
          // Paper start - general item meta fixes - parse spigot legacy position and merge into block entity tag
          final BlockVector legacyPosition = SerializableMeta.getObject(BlockVector.class, map, "blockPosition", true);
-@@ -230,6 +230,26 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -232,6 +232,26 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          return builder;
      }
  

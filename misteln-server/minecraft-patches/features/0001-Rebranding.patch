@@ -5,7 +5,7 @@ Subject: [PATCH] Rebranding
 
 
 diff --git a/net/minecraft/CrashReport.java b/net/minecraft/CrashReport.java
-index 394443d00e661715439be1e56dddc129947699a4..ed97125a39b8f91081b272028555e76b5e8ad801 100644
+index 2c60f1d955b17cbc79b5372c536e5463f6c0a186..84497e53966e0faa565549b9658f87b6793d199a 100644
 --- a/net/minecraft/CrashReport.java
 +++ b/net/minecraft/CrashReport.java
 @@ -30,7 +30,7 @@ public class CrashReport {
@@ -16,4 +16,4 @@ index 394443d00e661715439be1e56dddc129947699a4..ed97125a39b8f91081b272028555e76b
 +    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER/PURPUR! REPORT TO MISTELN INSTEAD!", ""); // Purpur - Rebrand // Misteln
  
      public CrashReport(String title, Throwable exception) {
-         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(exception); // Paper
+         this.title = title;

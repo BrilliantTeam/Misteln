@@ -5,10 +5,10 @@ Subject: [PATCH] Upgrade entity attribute ids from 1.21.1 to 1.21.4
 
 
 diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-index c3667006863f11203253b49cd4543a99381c7ee4..3ff646017d31bd807c8dcacae29272d1ccd769aa 100644
+index 3317f9b71f1c80092c25c1c2a325f67eddb3a944..4235f41c8457e370d0c5d8c2556f835f99426815 100644
 --- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
 +++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-@@ -226,9 +226,28 @@ public class AttributeInstance {
+@@ -223,9 +223,28 @@ public class AttributeInstance {
              if (modifiers.isPresent()) {
                  attribute = attribute.set("modifiers", attribute.createList(modifiers.get().map(Packed::upgradeLegacyModifier)));
              }
@@ -23,11 +23,11 @@ index c3667006863f11203253b49cd4543a99381c7ee4..3ff646017d31bd807c8dcacae29272d1
 +        private static final String[] LEGACY_ATTRIBUTE_PREFIXES = {"generic.", "horse.", "player.", "zombie."};
 +
 +        private static String upgradeAttributeId(final String id) {
-+            final ResourceLocation location = ResourceLocation.tryParse(id);
-+            if (location != null && location.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
++            final net.minecraft.resources.Identifier location = net.minecraft.resources.Identifier.tryParse(id);
++            if (location != null && location.getNamespace().equals(net.minecraft.resources.Identifier.DEFAULT_NAMESPACE)) {
 +                for (final String prefix : LEGACY_ATTRIBUTE_PREFIXES) {
 +                    if (location.getPath().startsWith(prefix)) {
-+                        return ResourceLocation.withDefaultNamespace(location.getPath().substring(prefix.length())).toString();
++                        return net.minecraft.resources.Identifier.withDefaultNamespace(location.getPath().substring(prefix.length())).toString();
 +                    }
 +                }
 +            }

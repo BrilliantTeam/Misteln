@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: skyouo0727 <skyouo@skyouo.engineer>
+Date: Thu, 17 Sep 2026 13:33:46 +0800
+Subject: [PATCH] Rebranding
+
+
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurVersionFetcher.java b/src/main/java/org/purpurmc/purpur/PurpurVersionFetcher.java
+index f2c22af968fbdbbea1bbd07712733c74e0b42333..347969daf33e58a01b1fa731ccbfcd557c8c4ac9 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurVersionFetcher.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurVersionFetcher.java
+@@ -37,7 +37,7 @@ public class PurpurVersionFetcher implements VersionFetcher {
+     private static final int DISTANCE_ERROR = -1;
+     private static final int DISTANCE_UNKNOWN = -2;
+     private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
+-    private static final String REPOSITORY = "PurpurMC/Purpur";
++    private static final String REPOSITORY = "BrilliantTeam/Misteln"; // Misteln
+     private static final ServerBuildInfo BUILD_INFO;
+     private static final String USER_AGENT;
+     private static final Gson GSON = new Gson();
+@@ -72,7 +72,7 @@ public class PurpurVersionFetcher implements VersionFetcher {
+ 
+     private static Component getUpdateStatusMessage() {
+         final OptionalInt buildNumber = BUILD_INFO.buildNumber();
+-        if (buildNumber.isPresent()) {
++        if (false) { // Misteln - always prefer github
+             distance = fetchDistanceFromSiteApi(buildNumber.getAsInt());
+         } else {
+             final Optional<String> gitBranch = BUILD_INFO.gitBranch();

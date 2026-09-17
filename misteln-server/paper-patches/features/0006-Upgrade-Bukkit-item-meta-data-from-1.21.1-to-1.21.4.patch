@@ -5,7 +5,7 @@ Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.1 to 1.21.4
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index f896417d37ba47494be17c59fb5fd55403dedfe1..04fb698b4a311bd36189511c0bf90eb33bb093fd 100644
+index 4abee7b6d922be34d216769af2ff55b58dda78b9..e29ecaa2cf79b2c860ec4bcda5aa8c318abf9960 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -49,6 +49,7 @@ public final class CraftItemFactory implements ItemFactory {
@@ -17,10 +17,10 @@ index f896417d37ba47494be17c59fb5fd55403dedfe1..04fb698b4a311bd36189511c0bf90eb3
          ConfigurationSerialization.registerClass(CraftToolComponent.CraftToolRule.class);
          ConfigurationSerialization.registerClass(CraftJukeboxComponent.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 36eecaf275d020786806b8d0e27eb95012ebf27b..be3d4deab12634655dfa81c0648253e93b73f5b6 100644
+index 7b320ae8961af147d39c75efdc69901119f481c5..ea97ff112847ce63a7872f5525432f19c0542974 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -75,6 +75,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -77,6 +77,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      }
      // Paper end
      private CompoundTag internalTag;
@@ -28,7 +28,7 @@ index 36eecaf275d020786806b8d0e27eb95012ebf27b..be3d4deab12634655dfa81c0648253e9
  
      CraftMetaBlockState(CraftMetaItem meta, Material material) {
          super(meta);
-@@ -206,7 +207,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -208,7 +209,10 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
          });
          tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT).ifPresent(components -> {
              upgradeAttributeModifiersInComponents(components); // Misteln - upgrade attribute modifiers before codec parse (1.20.5/6 -> 1.21)
@@ -40,7 +40,7 @@ index 36eecaf275d020786806b8d0e27eb95012ebf27b..be3d4deab12634655dfa81c0648253e9
          });
          // Paper end - new serialization format
      }
-@@ -251,18 +255,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+@@ -253,18 +257,29 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
      public void setVersion(int version) {
          super.setVersion(version);
  
@@ -68,7 +68,7 @@ index 36eecaf275d020786806b8d0e27eb95012ebf27b..be3d4deab12634655dfa81c0648253e9
  
 -        internalTag = null;
 +        if (!this.blockEntityTag.isEmpty()) {
-+            this.blockEntityTag = CustomData.of(ItemMetaDataUpgrader.upgradeBlockEntity(this.blockEntityTag.copyTag(), CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType()), version));
++            this.blockEntityTag = ItemMetaDataUpgrader.upgradeBlockEntity(this.blockEntityTag, CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType()), version);
 +        }
 +        if (legacyComponentsTag != null) {
 +            this.components = DataComponentMap.CODEC.parse(
@@ -80,7 +80,7 @@ index 36eecaf275d020786806b8d0e27eb95012ebf27b..be3d4deab12634655dfa81c0648253e9
      // Misteln end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 387ceaa377ecf6bcce627bad328bda4f5bf59ec1..36a90fa49534bb84cf18899da574bca8bb9a763f 100644
+index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd83a779f1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -347,6 +347,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -339,7 +339,7 @@ index 256f7fc3278488183b394018eb8c6b79967d14d4..62d7d4848d5d1404d8a21a541061a744
      public Map<String, Object> serialize() {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a835dbe631451287ff45d601fdb8af311e90c0b
+index 0000000000000000000000000000000000000000..f8b9035f246c453fd574999a4ce892572d95e8f6
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 @@ -0,0 +1,249 @@
@@ -516,7 +516,7 @@ index 0000000000000000000000000000000000000000..3a835dbe631451287ff45d601fdb8af3
 +            + "    internal: " + base64(internal) + "\n");
 +
 +        net.minecraft.world.item.ItemStack inner = CraftItemStack.asNMSCopy(stack).get(DataComponents.CONTAINER).copyOne();
-+        assertEquals("minecraft:attack_damage", inner.get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().getFirst().attribute().unwrapKey().orElseThrow().location().toString());
++        assertEquals("minecraft:attack_damage", inner.get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().getFirst().attribute().unwrapKey().orElseThrow().identifier().toString());
 +    }
 +
 +    @Test
@@ -553,7 +553,7 @@ index 0000000000000000000000000000000000000000..3a835dbe631451287ff45d601fdb8af3
 +            + "    meta-type: SPAWN_EGG\n"
 +            + "    internal: " + base64(internal) + "\n");
 +
-+        CompoundTag upgraded = CraftItemStack.asNMSCopy(stack).get(DataComponents.ENTITY_DATA).copyTag();
++        CompoundTag upgraded = CraftItemStack.asNMSCopy(stack).get(DataComponents.ENTITY_DATA).copyTagWithoutId();
 +        assertEquals("minecraft:max_health", upgraded.getListOrEmpty("attributes").getCompoundOrEmpty(0).getString("id").orElseThrow());
 +    }
 +

@@ -6,10 +6,10 @@ Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
 
 
 diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-index 42ad600c6a5cb20e1d820f169f6a1a17ef3a5195..c3667006863f11203253b49cd4543a99381c7ee4 100644
+index e42e6d01a8bb1bca5dea440d3f002ead68590e11..3317f9b71f1c80092c25c1c2a325f67eddb3a944 100644
 --- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
 +++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-@@ -200,7 +200,7 @@ public class AttributeInstance {
+@@ -197,7 +197,7 @@ public class AttributeInstance {
      }
  
      public record Packed(Holder<Attribute> attribute, double baseValue, List<AttributeModifier> modifiers) {
@@ -18,7 +18,7 @@ index 42ad600c6a5cb20e1d820f169f6a1a17ef3a5195..c3667006863f11203253b49cd4543a99
              instance -> instance.group(
                      BuiltInRegistries.ATTRIBUTE.holderByNameCodec().fieldOf("id").forGetter(AttributeInstance.Packed::attribute),
                      Codec.DOUBLE.fieldOf("base").orElse(0.0).forGetter(AttributeInstance.Packed::baseValue),
-@@ -208,6 +208,60 @@ public class AttributeInstance {
+@@ -205,6 +205,60 @@ public class AttributeInstance {
                  )
                  .apply(instance, AttributeInstance.Packed::new)
          );
@@ -52,7 +52,7 @@ index 42ad600c6a5cb20e1d820f169f6a1a17ef3a5195..c3667006863f11203253b49cd4543a99
 +                    .or(() -> legacy.get("name").asString().result().or(() -> legacy.get("Name").asString().result())
 +                        .map(name -> name.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9/._-]", "_")));
 +                if (path.isPresent()) {
-+                    modifier = modifier.set("id", modifier.createString(ResourceLocation.withDefaultNamespace(path.get()).toString()));
++                    modifier = modifier.set("id", modifier.createString(net.minecraft.resources.Identifier.withDefaultNamespace(path.get()).toString()));
 +                }
 +            }
 +            modifier = renameLegacyField(modifier, "Amount", "amount");

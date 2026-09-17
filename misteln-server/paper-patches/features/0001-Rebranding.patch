@@ -4,28 +4,6 @@ Date: Tue, 15 Sep 2026 12:01:24 +0800
 Subject: [PATCH] Rebranding
 
 
-diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index a5a7334f7a1f147945079f20aa04b4f317d9e94c..1636764e14c92e447e0c91ecbda92a950a5d68bb 100644
---- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-+++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-@@ -52,7 +52,7 @@ public class PaperVersionFetcher implements VersionFetcher {
-         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
-             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
-         } else {
--            updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", build); // Purpur - Rebrand
-+            updateMessage = getUpdateStatusMessage("BrilliantTeam/Misteln", build); // Purpur - Rebrand // Misteln
-         }
-         final @Nullable Component history = this.getHistory();
- 
-@@ -63,7 +63,7 @@ public class PaperVersionFetcher implements VersionFetcher {
-         //int distance = DISTANCE_ERROR; // Purpur - use field - Rebrand
- 
-         final OptionalInt buildNumber = build.buildNumber();
--        if (buildNumber.isPresent()) {
-+        if (false) { // Misteln - always prefer github
-             distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
-         } else {
-             final Optional<String> gitBranch = build.gitBranch();
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 index bc7e4e5560708fea89c584b1d8b471f4966f311a..27c434899d2a74053478aeb50ecb04543bb0685f 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
@@ -40,7 +18,7 @@ index bc7e4e5560708fea89c584b1d8b471f4966f311a..27c434899d2a74053478aeb50ecb0454
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-index b678ca41f7fb1f4aa10c012fb2b432f5e65b2a91..69cae18d6d3d4fda93f897a6a2a0777c701130b7 100644
+index 1b0ee48e28aaa68ddb1f28c23d3c5f5f40505c98..c7fc62806796376de53ac16132fcd6e47edad451 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 @@ -32,6 +32,7 @@ public record ServerBuildInfoImpl(
@@ -67,13 +45,13 @@ index b678ca41f7fb1f4aa10c012fb2b432f5e65b2a91..69cae18d6d3d4fda93f897a6a2a0777c
  
      @Override
      public boolean isBrandCompatible(final @NotNull Key brandId) {
--        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID); // Purpur - Rebrand
-+        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID) || brandId.equals(BRAND_PURPUR_ID); // Purpur - Rebrand // Misteln
+-        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID); // Purpur - Fix pufferfish issues // Purpur - Rebrand
++        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID) || brandId.equals(BRAND_PURPUR_ID); // Purpur - Fix pufferfish issues // Purpur - Rebrand // Misteln
      }
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 2e7c3d4befeb6256ce81ecaa9ed4e8fbcb21651e..85153426361fbbdcbd5d5b0bbd55189d13cea46b 100644
+index 554fc2c53b5028c8f89a0ae69a75e075ba4f4435..ce251b222d7339390d39d2b3406f4dddbf5a6562 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -491,7 +491,7 @@ public class CraftScheduler implements BukkitScheduler {
@@ -85,21 +63,8 @@ index 2e7c3d4befeb6256ce81ecaa9ed4e8fbcb21651e..85153426361fbbdcbd5d5b0bbd55189d
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-index e34ceaa77c7e538c8d6bc341c4c6f450488ce426..85a7dad199d28a256c770a46a18905904fda7dad 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-@@ -11,7 +11,7 @@ public final class Versioning {
-     public static String getBukkitVersion() {
-         String result = "Unknown-Version";
- 
--        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Purpur - Rebrand
-+        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.brilliantw.misteln/misteln-api/pom.properties"); // Purpur - Rebrand // Misteln
-         Properties properties = new Properties();
- 
-         if (stream != null) {
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 39493810336442e74c0fc99fdeb5e073a8f4e95e..427cb072c2841417e8f71b23acd48b7357808c23 100644
+index 048b96047ac737cf515682593d4632b3c60d98a7..04e7541c3da39a662d6a796d0ab970b307669e60 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -75,14 +75,14 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre

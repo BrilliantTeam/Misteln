@@ -6,21 +6,21 @@ Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.4 to 1.21.8
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-index 1a5cec520510b85919730c2f985c099c18a80b50..7f8c215fbaccd32a2f1c54dfe919a895a4eb889b 100644
+index 5f3e130ca2b2d6a42092e3d08a188704d0450491..58654ba69f2d5ad8ee68bea2f646e02b36c6254a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-@@ -21,6 +21,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+@@ -23,6 +23,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
      static final ItemMetaKey VARIANT = new ItemMetaKey("Variant", "axolotl-variant");
-     static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+     static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
      static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 +    static final ItemMetaKeyType<net.minecraft.world.entity.animal.axolotl.Axolotl.Variant> AXOLOTL_VARIANT = new ItemMetaKeyType<>(DataComponents.AXOLOTL_VARIANT); // Misteln - DFU: the variant is a component since 1.21.5
  
      private Integer variant;
      private CompoundTag entityTag;
-@@ -43,14 +44,34 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+@@ -45,14 +46,34 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
  
          getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
-             this.entityTag = nbt.copyTag();
+             this.entityTag = nbt.copyTagWithEntityId();
 -            this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
          });
          getOrEmpty(tag, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
@@ -54,7 +54,7 @@ index 1a5cec520510b85919730c2f985c099c18a80b50..7f8c215fbaccd32a2f1c54dfe919a895
      CraftMetaAxolotlBucket(Map<String, Object> map) {
          super(map);
  
-@@ -73,6 +94,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+@@ -75,6 +96,7 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
  
          this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
          this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
@@ -62,8 +62,8 @@ index 1a5cec520510b85919730c2f985c099c18a80b50..7f8c215fbaccd32a2f1c54dfe919a895
      }
  
      @Override
-@@ -93,17 +115,15 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
-             tag.put(CraftMetaAxolotlBucket.ENTITY_TAG, CustomData.of(this.entityTag));
+@@ -95,17 +117,15 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+             tag.put(CraftMetaAxolotlBucket.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
          }
  
 -        CompoundTag bucketEntityTag = (this.bucketEntityTag != null) ? this.bucketEntityTag.copy() : null;
@@ -134,8 +134,32 @@ index eb21c7bf833bbcbc93f30f85af1cdb74f31c63da..e2cfdb1ce6ffa8fd896bcd068a0b1cf2
      @Override
      public CraftMetaBookSigned clone() {
          CraftMetaBookSigned meta = (CraftMetaBookSigned) super.clone();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index bedbcfbb4b4b112e941b3fd2aa0f8a8bc42cd9f6..ac41a6cf1a26ed7598a6f0bfb58ea7ccf8e83c01 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -137,6 +137,19 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+ 
+             entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
+                     version, Bukkit.getUnsafe().getDataVersion());
++
++            // DFU: the painting variant became a component in 1.21.5 (see V4299)
++            if (version <= ca.spottedleaf.dataconverter.minecraft.MCVersions.V25W02A && "minecraft:painting".equals(entityTag.getStringOr("id", "")) && entityTag.contains("variant")) {
++                DataComponents.PAINTING_VARIANT.codecOrThrow()
++                    .parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), entityTag.get("variant"))
++                    .ifSuccess(variant -> {
++                        this.unhandledTags.set(DataComponents.PAINTING_VARIANT, variant);
++                        entityTag.remove("variant");
++                        if (entityTag.size() == 1) {
++                            entityTag = null;
++                        }
++                    });
++            }
+         }
+     }
+     // Misteln end
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 36a90fa49534bb84cf18899da574bca8bb9a763f..06a87a2e6274e22df317dab2d4313e5a6eaf12ac 100644
+index eb8930231f1cb6d38281f6f1ae5954cd83a779f1..abc0cdd3e9332011996440afe4ecb3bd463d8860 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -352,6 +352,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -283,7 +307,7 @@ index 36a90fa49534bb84cf18899da574bca8bb9a763f..06a87a2e6274e22df317dab2d4313e5a
                  for (final Map.Entry<Class<? extends CraftMetaItem>, Set<DataComponentType<?>>> entry : map.entrySet()) {
                      final ArrayList<DataComponentType<?>> topLevelTags = new ArrayList<>(entry.getValue());
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a98811a145980 100644
+index 71624e8acd7b85206d1f7d4bf73e4785b7f42118..2604db7411424f2c54142a4604c6e5f5b7e8f05f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 @@ -5,6 +5,7 @@ import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
@@ -294,22 +318,22 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
  import net.minecraft.core.component.DataComponentPatch;
  import net.minecraft.core.component.DataComponents;
  import net.minecraft.nbt.CompoundTag;
-@@ -23,6 +24,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+@@ -25,6 +26,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
      static final ItemMetaKey VARIANT = new ItemMetaKey("BucketVariantTag", "fish-variant");
-     static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
+     static final ItemMetaKeyType<TypedEntityData<EntityType<?>>> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "entity-tag");
      static final ItemMetaKeyType<CustomData> BUCKET_ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.BUCKET_ENTITY_DATA, "bucket-entity-tag");
 +    // Misteln start - DFU: the variant is split into components since 1.21.5
-+    static final ItemMetaKeyType<net.minecraft.world.entity.animal.TropicalFish.Pattern> PATTERN = new ItemMetaKeyType<>(DataComponents.TROPICAL_FISH_PATTERN);
++    static final ItemMetaKeyType<net.minecraft.world.entity.animal.fish.TropicalFish.Pattern> PATTERN = new ItemMetaKeyType<>(DataComponents.TROPICAL_FISH_PATTERN);
 +    static final ItemMetaKeyType<net.minecraft.world.item.DyeColor> BASE_COLOR = new ItemMetaKeyType<>(DataComponents.TROPICAL_FISH_BASE_COLOR);
 +    static final ItemMetaKeyType<net.minecraft.world.item.DyeColor> PATTERN_COLOR = new ItemMetaKeyType<>(DataComponents.TROPICAL_FISH_PATTERN_COLOR);
 +    // Misteln end
  
      private Integer variant;
      private CompoundTag entityTag;
-@@ -45,13 +51,41 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+@@ -47,13 +53,41 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
  
          getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
-             this.entityTag = nbt.copyTag();
+             this.entityTag = nbt.copyTagWithEntityId();
 -            this.entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
          });
          getOrEmpty(tag, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
@@ -318,12 +342,12 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
          });
 +        // Misteln start - DFU: the variant tag is ignored since 1.21.5, move it to the components
 +        this.migrateLegacyVariant();
-+        final Optional<? extends net.minecraft.world.entity.animal.TropicalFish.Pattern> pattern = getOrEmpty(tag, CraftMetaTropicalFishBucket.PATTERN);
++        final Optional<? extends net.minecraft.world.entity.animal.fish.TropicalFish.Pattern> pattern = getOrEmpty(tag, CraftMetaTropicalFishBucket.PATTERN);
 +        final Optional<? extends net.minecraft.world.item.DyeColor> baseColor = getOrEmpty(tag, CraftMetaTropicalFishBucket.BASE_COLOR);
 +        final Optional<? extends net.minecraft.world.item.DyeColor> patternColor = getOrEmpty(tag, CraftMetaTropicalFishBucket.PATTERN_COLOR);
 +        if (this.variant == null && (pattern.isPresent() || baseColor.isPresent() || patternColor.isPresent())) {
-+            final net.minecraft.world.entity.animal.TropicalFish.Variant fallback = net.minecraft.world.entity.animal.TropicalFish.DEFAULT_VARIANT;
-+            this.variant = new net.minecraft.world.entity.animal.TropicalFish.Variant(
++            final net.minecraft.world.entity.animal.fish.TropicalFish.Variant fallback = net.minecraft.world.entity.animal.fish.TropicalFish.DEFAULT_VARIANT;
++            this.variant = new net.minecraft.world.entity.animal.fish.TropicalFish.Variant(
 +                pattern.isPresent() ? pattern.get() : fallback.pattern(),
 +                baseColor.isPresent() ? baseColor.get() : fallback.baseColor(),
 +                patternColor.isPresent() ? patternColor.get() : fallback.patternColor()
@@ -332,7 +356,7 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
 +        // Misteln end
 +    }
 +
-+    // Misteln start - DFU: the variant tag is ignored since 1.21.5, move it to the components
++    // Misteln start - DFU: the variant tag is ignored since 1.21.5, move it to the component
 +    private void migrateLegacyVariant() {
 +        if (this.entityTag != null && this.entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).isPresent()) {
 +            this.variant = this.entityTag.getIntOr(CraftMetaTropicalFishBucket.VARIANT.NBT, 0);
@@ -350,7 +374,7 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
  
      CraftMetaTropicalFishBucket(Map<String, Object> map) {
          super(map);
-@@ -75,6 +109,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+@@ -77,6 +111,7 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
  
          this.entityTag = tag.getCompound(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
          this.bucketEntityTag = tag.getCompound(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
@@ -358,8 +382,8 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
      }
  
      @Override
-@@ -95,17 +130,17 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
-             tag.put(CraftMetaTropicalFishBucket.ENTITY_TAG, CustomData.of(this.entityTag));
+@@ -97,17 +132,17 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+             tag.put(CraftMetaTropicalFishBucket.ENTITY_TAG, TypedEntityData.decodeEntity(this.entityTag));
          }
  
 -        CompoundTag bucketEntityTag = (this.bucketEntityTag != null) ? this.bucketEntityTag.copy() : null;
@@ -368,7 +392,7 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
 -                bucketEntityTag = new CompoundTag();
 -            }
 -            bucketEntityTag.putInt(CraftMetaTropicalFishBucket.VARIANT.NBT, this.variant);
-+        // Misteln start - DFU: the variant tag is ignored since 1.21.5, write the components
++        // Misteln start - DFU: the variant tag is ignored since 1.21.5, write the component
 +        if (this.bucketEntityTag != null) {
 +            tag.put(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG, CustomData.of(this.bucketEntityTag));
          }
@@ -376,9 +400,9 @@ index 7047d67f54a0fe8a6a86c4ff2d892e80a28c706f..434538485a738d13f6024142b81a9881
 -        if (bucketEntityTag != null) {
 -            tag.put(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG, CustomData.of(bucketEntityTag));
 +        if (this.hasVariant()) {
-+            tag.put(CraftMetaTropicalFishBucket.PATTERN, net.minecraft.world.entity.animal.TropicalFish.getPattern(this.variant));
-+            tag.put(CraftMetaTropicalFishBucket.BASE_COLOR, net.minecraft.world.entity.animal.TropicalFish.getBaseColor(this.variant));
-+            tag.put(CraftMetaTropicalFishBucket.PATTERN_COLOR, net.minecraft.world.entity.animal.TropicalFish.getPatternColor(this.variant));
++            tag.put(CraftMetaTropicalFishBucket.PATTERN, net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(this.variant));
++            tag.put(CraftMetaTropicalFishBucket.BASE_COLOR, net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(this.variant));
++            tag.put(CraftMetaTropicalFishBucket.PATTERN_COLOR, net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(this.variant));
          }
 +        // Misteln end
      }
@@ -427,7 +451,7 @@ index 68c25dcb80f733fd1c061550bbf55c920a9fa7a0..d4b67ca67f3f181341da7f687534b46e
 +    }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftJukeboxComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftJukeboxComponent.java
-index eff1cad2c360f5c548c0390375ae090cfb12c047..2b9bec33101856cb0b3ac0f15f44a3f5cb853e32 100644
+index 616d409a87530622b2f1fda3b84196b57dd367a2..b250d7c06d13454d2fddcd127be22ebb9a950d4b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftJukeboxComponent.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftJukeboxComponent.java
 @@ -23,6 +23,7 @@ import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
@@ -443,11 +467,11 @@ index eff1cad2c360f5c548c0390375ae090cfb12c047..2b9bec33101856cb0b3ac0f15f44a3f5
          String song = SerializableMeta.getObject(String.class, map, "song", false);
  
 +        this.legacyHiddenInTooltip = Boolean.FALSE.equals(SerializableMeta.getObject(Boolean.class, map, "show-in-tooltip", true)); // Misteln - DFU
-         this.handle = new JukeboxPlayable(new EitherHolder<>(ResourceKey.create(Registries.JUKEBOX_SONG, ResourceLocation.parse(song))));
+         this.handle = new JukeboxPlayable(new EitherHolder<>(ResourceKey.create(Registries.JUKEBOX_SONG, Identifier.parse(song))));
      }
  
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f39c330d4 100644
+index f8b9035f246c453fd574999a4ce892572d95e8f6..dc859fd915ba16b46d281ba0d8b21b630703e980 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 @@ -27,11 +27,12 @@ import org.bukkit.support.environment.AllFeatures;
@@ -485,7 +509,7 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
          Consumable consumable = nms.get(DataComponents.CONSUMABLE); // an apple eats in 1.6 seconds by default
          assertEquals(3.2F, consumable.consumeSeconds(), 1.0E-4F);
          assertEquals(1, consumable.onConsumeEffects().size());
-@@ -246,4 +248,209 @@ public class ItemMetaDataUpgradeTest {
+@@ -246,4 +248,226 @@ public class ItemMetaDataUpgradeTest {
          assertEquals(40.0, map.getBaseValue(Attributes.MAX_HEALTH));
          assertEquals(0.5, map.getBaseValue(Attributes.MOVEMENT_SPEED));
      }
@@ -581,7 +605,7 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
 +            + "    meta-type: SPAWN_EGG\n"
 +            + "    internal: " + base64(internal) + "\n");
 +
-+        CompoundTag upgraded = CraftItemStack.asNMSCopy(egg).get(DataComponents.ENTITY_DATA).copyTag();
++        CompoundTag upgraded = CraftItemStack.asNMSCopy(egg).get(DataComponents.ENTITY_DATA).copyTagWithoutId();
 +        assertEquals("minecraft:iron_sword", upgraded.getCompoundOrEmpty("equipment").getCompoundOrEmpty("mainhand").getString("id").orElseThrow(), upgraded.toString());
 +    }
 +
@@ -663,6 +687,23 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
 +    }
 +
 +    @Test
++    public void testLegacyPaintingVariant() throws IOException {
++        CompoundTag painting = new CompoundTag();
++        painting.putString("id", "minecraft:painting");
++        painting.putString("variant", "minecraft:kebab");
++        CompoundTag internal = new CompoundTag();
++        internal.put("EntityTag", painting);
++
++        ItemStack stack = load(V1_21_4, "PAINTING", ""
++            + "    meta-type: ENTITY_TAG\n"
++            + "    internal: " + base64(internal) + "\n");
++
++        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
++        assertEquals("minecraft:kebab", nms.get(DataComponents.PAINTING_VARIANT).unwrapKey().orElseThrow().identifier().toString());
++        assertFalse(nms.has(DataComponents.ENTITY_DATA), "the entity data only held the variant");
++    }
++
++    @Test
 +    public void testLegacyBucketVariants() {
 +        ItemStack axolotl = load(V1_21_4, "AXOLOTL_BUCKET", ""
 +            + "    meta-type: AXOLOTL_BUCKET\n"
@@ -675,9 +716,9 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
 +            + "    meta-type: TROPICAL_FISH_BUCKET\n"
 +            + "    fish-variant: 117506305\n");
 +        net.minecraft.world.item.ItemStack fishNms = CraftItemStack.asNMSCopy(fish);
-+        assertEquals(net.minecraft.world.entity.animal.TropicalFish.getPattern(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN));
-+        assertEquals(net.minecraft.world.entity.animal.TropicalFish.getBaseColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_BASE_COLOR));
-+        assertEquals(net.minecraft.world.entity.animal.TropicalFish.getPatternColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN_COLOR));
++        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN));
++        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_BASE_COLOR));
++        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN_COLOR));
 +
 +        CompoundTag bucketTag = new CompoundTag();
 +        bucketTag.putInt("Variant", 2);

@@ -6,11 +6,11 @@ Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index f0e04bf3007bdbe968a06707676b43536b56ce9b..36eecaf275d020786806b8d0e27eb95012ebf27b 100644
+index 20e13a8ddc69f18ee154ddf9208124fffe593c8a..7b320ae8961af147d39c75efdc69901119f481c5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-@@ -205,11 +205,27 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
-             this.blockEntityTag = CustomData.of(blockEntityCustomTag);
+@@ -207,11 +207,27 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+             this.blockEntityTag = blockEntityCustomTag.copy();
          });
          tag.getCompound(CraftMetaBlockState.BLOCK_ENTITY_COMPONENTS.NBT).ifPresent(components -> {
 +            upgradeAttributeModifiersInComponents(components); // Misteln - upgrade attribute modifiers before codec parse (1.20.5/6 -> 1.21)
@@ -38,7 +38,7 @@ index f0e04bf3007bdbe968a06707676b43536b56ce9b..36eecaf275d020786806b8d0e27eb950
      void serializeInternal(final Map<String, Tag> internalTags) {
          // Paper start - new serialization format
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index c0f44885f4dcd3c171d342d67527c2dd26ad18cd..387ceaa377ecf6bcce627bad328bda4f5bf59ec1 100644
+index 3825cd713a42397204b13212a47d63626985b71b..c44f6294b456f880f70f8d7df645d17009e5ebaa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -824,6 +824,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
