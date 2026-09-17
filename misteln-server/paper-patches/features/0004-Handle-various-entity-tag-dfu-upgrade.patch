@@ -87,7 +87,7 @@ index 6af9eeadd8fd3315e8673838c391c0d26e964e4f..1a5cec520510b85919730c2f985c099c
      public CraftMetaAxolotlBucket clone() {
          CraftMetaAxolotlBucket clone = (CraftMetaAxolotlBucket) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-index b26c305a9d2662bb8e4139fd8e1fae4851b4654d..dbf5d08600baabc9f5e4bc420fdc94652b72b3d4 100644
+index f257caf7f933f0b61f6f5f999f984ba22286eda6..a957db344adbb343ccebeef3dfdc6dcdd8ddcc16 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
 @@ -1,5 +1,7 @@
@@ -106,7 +106,7 @@ index b26c305a9d2662bb8e4139fd8e1fae4851b4654d..dbf5d08600baabc9f5e4bc420fdc9465
  import org.bukkit.Material;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  
-@@ -130,6 +133,20 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+@@ -123,6 +126,20 @@ public class CraftMetaEntityTag extends CraftMetaItem {
          return builder;
      }
  

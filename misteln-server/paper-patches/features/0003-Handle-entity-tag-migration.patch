@@ -40,24 +40,6 @@ index bbb6c4934327e838bb3e4f0eb58ceb21d408e452..6af9eeadd8fd3315e8673838c391c0d2
          this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
          this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
      }
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-index f257caf7f933f0b61f6f5f999f984ba22286eda6..b26c305a9d2662bb8e4139fd8e1fae4851b4654d 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-@@ -55,6 +55,13 @@ public class CraftMetaEntityTag extends CraftMetaItem {
-     void deserializeInternal(CompoundTag tag, Object context) {
-         super.deserializeInternal(tag, context);
- 
-+        // Misteln start - merge EntityTag to entity-tag
-+        if (tag.contains("EntityTag")) {
-+            tag.put(CraftMetaEntityTag.ENTITY_TAG.NBT, tag.getCompoundOrEmpty("EntityTag"));
-+            tag.remove("EntityTag");
-+        }
-+        // Misteln end
-+
-         this.entityTag = tag.getCompound(CraftMetaEntityTag.ENTITY_TAG.NBT).orElse(this.entityTag);
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 index fe3f45fcdd8981102b6e85eb1895139289520bd5..f64bc8657e740bb1e359d264f2e91a422d95243e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java

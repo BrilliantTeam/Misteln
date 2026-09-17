@@ -134,6 +134,30 @@ index eb21c7bf833bbcbc93f30f85af1cdb74f31c63da..e2cfdb1ce6ffa8fd896bcd068a0b1cf2
      @Override
      public CraftMetaBookSigned clone() {
          CraftMetaBookSigned meta = (CraftMetaBookSigned) super.clone();
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+index a957db344adbb343ccebeef3dfdc6dcdd8ddcc16..4f4d41353f02dab198613ce92b4e1cd1ca94f055 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
+@@ -136,6 +136,19 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+ 
+             entityTag = MCDataConverter.convertTag(MCTypeRegistry.ENTITY, entityTag,
+                     version, Bukkit.getUnsafe().getDataVersion());
++
++            // DFU: the painting variant became a component in 1.21.5 (see V4299)
++            if (version <= ca.spottedleaf.dataconverter.minecraft.MCVersions.V25W02A && "minecraft:painting".equals(entityTag.getStringOr("id", "")) && entityTag.contains("variant")) {
++                DataComponents.PAINTING_VARIANT.codecOrThrow()
++                    .parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(net.minecraft.nbt.NbtOps.INSTANCE), entityTag.get("variant"))
++                    .ifSuccess(variant -> {
++                        this.unhandledTags.set(DataComponents.PAINTING_VARIANT, variant);
++                        entityTag.remove("variant");
++                        if (entityTag.size() == 1) {
++                            entityTag = null;
++                        }
++                    });
++            }
+         }
+     }
+     // Misteln end
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 index 36a90fa49534bb84cf18899da574bca8bb9a763f..06a87a2e6274e22df317dab2d4313e5a6eaf12ac 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
@@ -447,7 +471,7 @@ index eff1cad2c360f5c548c0390375ae090cfb12c047..2b9bec33101856cb0b3ac0f15f44a3f5
      }
  
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f39c330d4 100644
+index 3a835dbe631451287ff45d601fdb8af311e90c0b..024f14d4f360663c5a2dc32f237dc97d410b5952 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 @@ -27,11 +27,12 @@ import org.bukkit.support.environment.AllFeatures;
@@ -485,7 +509,7 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
          Consumable consumable = nms.get(DataComponents.CONSUMABLE); // an apple eats in 1.6 seconds by default
          assertEquals(3.2F, consumable.consumeSeconds(), 1.0E-4F);
          assertEquals(1, consumable.onConsumeEffects().size());
-@@ -246,4 +248,209 @@ public class ItemMetaDataUpgradeTest {
+@@ -246,4 +248,226 @@ public class ItemMetaDataUpgradeTest {
          assertEquals(40.0, map.getBaseValue(Attributes.MAX_HEALTH));
          assertEquals(0.5, map.getBaseValue(Attributes.MOVEMENT_SPEED));
      }
@@ -660,6 +684,23 @@ index 3a835dbe631451287ff45d601fdb8af311e90c0b..8be3799ba29e50ba258f1f0683415a4f
 +            + "    - HIDE_ENCHANTS\n"
 +            + "    - HIDE_ADDITIONAL_TOOLTIP\n");
 +        assertTrue(world.isSimilar(variable), "the same item from world data and from a yaml file must stay similar");
++    }
++
++    @Test
++    public void testLegacyPaintingVariant() throws IOException {
++        CompoundTag painting = new CompoundTag();
++        painting.putString("id", "minecraft:painting");
++        painting.putString("variant", "minecraft:kebab");
++        CompoundTag internal = new CompoundTag();
++        internal.put("EntityTag", painting);
++
++        ItemStack stack = load(V1_21_4, "PAINTING", ""
++            + "    meta-type: ENTITY_TAG\n"
++            + "    internal: " + base64(internal) + "\n");
++
++        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
++        assertEquals("minecraft:kebab", nms.get(DataComponents.PAINTING_VARIANT).unwrapKey().orElseThrow().location().toString());
++        assertFalse(nms.has(DataComponents.ENTITY_DATA), "the entity data only held the variant");
 +    }
 +
 +    @Test
