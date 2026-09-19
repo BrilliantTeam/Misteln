@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Thu, 17 Sep 2026 23:16:06 +0800
+Date: Sat, 19 Sep 2026 09:56:00 +0800
 Subject: [PATCH] Rename chain in Bukkit tool rules and knowledge books
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
-index 38b07b508205872ed43330fbde0aff7b0cefddb7..231e12dd874679691df6278e82881c4cf899663c 100644
+index ffbcf189b87034b03270618cddb218eb6a29df1c..0d9b3cc928bd5b460f56aeaefe829a8d24093b05 100644
 --- a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
 +++ b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
-@@ -70,7 +70,7 @@ public final class ConfigSerializationUtil {
+@@ -77,7 +77,7 @@ public final class ConfigSerializationUtil {
                      continue;
                  }
  
@@ -17,7 +17,7 @@ index 38b07b508205872ed43330fbde0aff7b0cefddb7..231e12dd874679691df6278e82881c4c
              }
  
              return HolderSet.direct(holderList);
-@@ -81,6 +81,25 @@ public final class ConfigSerializationUtil {
+@@ -88,6 +88,25 @@ public final class ConfigSerializationUtil {
          return HolderSet.empty();
      }
  
@@ -44,10 +44,10 @@ index 38b07b508205872ed43330fbde0aff7b0cefddb7..231e12dd874679691df6278e82881c4c
      }
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
-index e6ef13de6a1591350256275c15252349b4ba2dee..08b726aab8c5457015b04a9a70ed990d16c445cb 100644
+index 43ac638f449fcf2d2809e6a8266c943ec6c4fbc2..85557937475930d8192a93a3b26f794c3851932c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaKnowledgeBook.java
-@@ -53,6 +53,20 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
+@@ -54,6 +54,20 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
          }
      }
  
@@ -69,7 +69,7 @@ index e6ef13de6a1591350256275c15252349b4ba2dee..08b726aab8c5457015b04a9a70ed990d
      void applyToItem(CraftMetaItem.Applicator tag) {
          super.applyToItem(tag);
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
-index 05af99e79e4f09ce326453cf963b9f612c438def..33292d8a143d01358bdcfb6db2c017319aaf302b 100644
+index 0719fe9655b242945f0818dd0059c48e432e9ace..5031df4a526026b52b545b3e9f96bb9a2a8149a2 100644
 --- a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
 @@ -69,6 +69,17 @@ public class UpgradeRenamesAndFormatsTest {

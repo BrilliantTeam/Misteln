@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 10:22:44 +0800
+Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.11 to 26.2
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
+index 0d9b3cc928bd5b460f56aeaefe829a8d24093b05..4f3e6886e89b8756b0881b60309fddc554e3eb57 100644
+--- a/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
++++ b/src/main/java/org/bukkit/craftbukkit/configuration/ConfigSerializationUtil.java
+@@ -59,8 +59,8 @@ public final class ConfigSerializationUtil {
+ 
+     public static <T> HolderSet<T> getHolderSet(Object from, ResourceKey<Registry<T>> registryKey) {
+         Registry<T> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+-        if (from instanceof String parseString && parseString.startsWith("#")) { // Tag
+-            parseString = parseString.substring(1);
++        if (from instanceof String parseString) { // Tag
++            parseString = parseString.startsWith("#") ? parseString.substring(1) : parseString; // Misteln - DFU: a tag was written without the leading # before 26.1 (damage-resistant)
+             Identifier key = Identifier.tryParse(parseString);
+             if (key != null) {
+                 Optional<HolderSet.Named<T>> tag = registry.get(TagKey.create(registryKey, key));
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
+index 5554a9502b7bdc5a40d63d8d33ac10c056e752b2..08d1b67dfa9c5c5570f8d17567ef81d57ac37077 100644
+--- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
+@@ -27,13 +27,14 @@ import org.bukkit.support.environment.AllFeatures;
+ import org.bukkit.tag.DamageTypeTags;
+ import org.junit.jupiter.api.Test;
+ 
+-// Misteln - DFU: items serialized by 1.21.1 (data version 3955), 1.21.4 (4189) and 1.21.8 (4440) must still load
++// Misteln - DFU: items serialized by 1.21.1 (data version 3955), 1.21.4 (4189), 1.21.8 (4440) and 1.21.11 (4671) must still load
+ @AllFeatures
+ public class ItemMetaDataUpgradeTest {
+ 
+     private static final int V1_21_1 = 3955;
+     private static final int V1_21_4 = 4189;
+     private static final int V1_21_8 = 4440;
++    private static final int V1_21_11 = 4671;
+ 
+     static String base64(CompoundTag tag) throws IOException {
+         ByteArrayOutputStream buf = new ByteArrayOutputStream();
+@@ -536,4 +537,20 @@ public class ItemMetaDataUpgradeTest {
+         assertTrue(api.setItemMeta(meta), "an id-less entity tag must not throw");
+         assertEquals(net.minecraft.world.entity.EntityTypes.ZOMBIE, CraftItemStack.asNMSCopy(api).get(DataComponents.ENTITY_DATA).type());
+     }
++
++    @Test
++    public void testDamageResistantTagWithoutHash() {
++        // 26.1 writes the damage resistant types as a holder set ("#minecraft:is_fire" or a list), older versions wrote the tag id alone
++        ItemStack legacy = load(V1_21_11, "STICK", ""
++            + "    meta-type: UNSPECIFIC\n"
++            + "    damage-resistant: minecraft:is_fire\n");
++        assertEquals(net.minecraft.tags.DamageTypeTags.IS_FIRE,
++            CraftItemStack.asNMSCopy(legacy).get(DataComponents.DAMAGE_RESISTANT).types().unwrapKey().orElse(null));
++
++        ItemStack current = load(V1_21_11, "STICK", ""
++            + "    meta-type: UNSPECIFIC\n"
++            + "    damage-resistant: '#minecraft:is_fire'\n");
++        assertEquals(net.minecraft.tags.DamageTypeTags.IS_FIRE,
++            CraftItemStack.asNMSCopy(current).get(DataComponents.DAMAGE_RESISTANT).types().unwrapKey().orElse(null));
++    }
+ }

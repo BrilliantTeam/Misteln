@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: skyouo0727 <skyouo@skyouo.engineer>
-Date: Tue, 15 Sep 2026 12:06:46 +0800
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 09:55:59 +0800
 Subject: [PATCH] Handle various entity tag dfu upgrade
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
-index 96c6b992b4d2ca4a5843d2c78f51783c9ddb1a14..b3937fd9be9526c574a4d3549281af04ac6334ce 100644
+index 6e84609f5d8c0ed06fd8e1a218713ba01ef5b9f1..0745d5951acaedd8d0deae833446529a5ada9088 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 @@ -1,5 +1,7 @@
@@ -16,15 +16,15 @@ index 96c6b992b4d2ca4a5843d2c78f51783c9ddb1a14..b3937fd9be9526c574a4d3549281af04
  import com.google.common.collect.ImmutableMap.Builder;
  import java.util.Map;
  import java.util.Objects;
-@@ -8,6 +10,7 @@ import net.minecraft.core.component.DataComponents;
- import net.minecraft.nbt.CompoundTag;
+@@ -9,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
  import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.EntityTypes;
  import net.minecraft.world.item.component.TypedEntityData;
 +import org.bukkit.Bukkit;
  import org.bukkit.Material;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  
-@@ -168,6 +171,20 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
+@@ -169,6 +172,20 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
          return builder;
      }
  
@@ -46,7 +46,7 @@ index 96c6b992b4d2ca4a5843d2c78f51783c9ddb1a14..b3937fd9be9526c574a4d3549281af04
      public CraftMetaArmorStand clone() {
          CraftMetaArmorStand clone = (CraftMetaArmorStand) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
-index cbe9de31680a6b5f0170f71fcbfec1706fc74b36..5f3e130ca2b2d6a42092e3d08a188704d0450491 100644
+index 423536b6666d68091e046985452efb9be6e5b56a..4b936b05e21c077a3737bcde356113292aee0240 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaAxolotlBucket.java
 @@ -1,5 +1,7 @@
@@ -57,15 +57,15 @@ index cbe9de31680a6b5f0170f71fcbfec1706fc74b36..5f3e130ca2b2d6a42092e3d08a188704
  import com.google.common.collect.ImmutableMap;
  import java.util.Map;
  import java.util.Objects;
-@@ -10,6 +12,7 @@ import net.minecraft.nbt.Tag;
- import net.minecraft.world.entity.EntityType;
+@@ -11,6 +13,7 @@ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.EntityTypes;
  import net.minecraft.world.item.component.CustomData;
  import net.minecraft.world.item.component.TypedEntityData;
 +import org.bukkit.Bukkit;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  import org.bukkit.entity.Axolotl;
  import org.bukkit.inventory.meta.AxolotlBucketMeta;
-@@ -167,6 +170,20 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
+@@ -203,6 +206,20 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
          return original != hash ? CraftMetaAxolotlBucket.class.hashCode() ^ hash : hash;
      }
  
@@ -87,7 +87,7 @@ index cbe9de31680a6b5f0170f71fcbfec1706fc74b36..5f3e130ca2b2d6a42092e3d08a188704
      public CraftMetaAxolotlBucket clone() {
          CraftMetaAxolotlBucket clone = (CraftMetaAxolotlBucket) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
-index 855bff96382fd6024231083da36091f90ea26cee..bedbcfbb4b4b112e941b3fd2aa0f8a8bc42cd9f6 100644
+index 0d59991ec91bc6fd835de031a080af9074a1ba05..49ec2d9213d424f2f1f0ec8bf7b39720cb800612 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaEntityTag.java
 @@ -1,5 +1,7 @@
@@ -106,7 +106,7 @@ index 855bff96382fd6024231083da36091f90ea26cee..bedbcfbb4b4b112e941b3fd2aa0f8a8b
  import org.bukkit.Material;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
  
-@@ -124,6 +127,20 @@ public class CraftMetaEntityTag extends CraftMetaItem {
+@@ -125,6 +128,20 @@ public class CraftMetaEntityTag extends CraftMetaItem {
          return builder;
      }
  
@@ -128,7 +128,7 @@ index 855bff96382fd6024231083da36091f90ea26cee..bedbcfbb4b4b112e941b3fd2aa0f8a8b
      public CraftMetaEntityTag clone() {
          CraftMetaEntityTag clone = (CraftMetaEntityTag) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
-index 2b856c56b77786cc26d363c45b941be21c372d53..fb5eff149e8ffecdbb92d9ca2b4f4af6919ab865 100644
+index 17d19955789cba662b925611e804b636a06ac3b7..c557bf8d2a3ea98e9fdef55fa7981f1775ba5b77 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
 @@ -1,5 +1,7 @@
@@ -169,26 +169,27 @@ index 2b856c56b77786cc26d363c45b941be21c372d53..fb5eff149e8ffecdbb92d9ca2b4f4af6
      public CraftMetaSpawnEgg clone() {
          CraftMetaSpawnEgg clone = (CraftMetaSpawnEgg) super.clone();
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-index 05b2de659825f765c642da3672491033fe83a4b1..71624e8acd7b85206d1f7d4bf73e4785b7f42118 100644
+index 6be1ddf5d7e053e06cdb5f436f1086693242f6c5..66caa12c305ddd0da22369b4cb39aec3790893e1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaTropicalFishBucket.java
-@@ -1,5 +1,7 @@
+@@ -1,6 +1,8 @@
  package org.bukkit.craftbukkit.inventory;
  
+ import com.google.common.base.Preconditions;
 +import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
 +import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
  import com.google.common.collect.ImmutableMap;
  import java.util.Map;
  import java.util.Objects;
-@@ -10,6 +12,7 @@ import net.minecraft.nbt.Tag;
- import net.minecraft.world.entity.EntityType;
+@@ -12,6 +14,7 @@ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.EntityTypes;
  import net.minecraft.world.item.component.CustomData;
  import net.minecraft.world.item.component.TypedEntityData;
 +import org.bukkit.Bukkit;
  import org.bukkit.DyeColor;
  import org.bukkit.configuration.serialization.DelegateDeserialization;
- import org.bukkit.craftbukkit.entity.CraftTropicalFish;
-@@ -199,6 +202,20 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
+ import org.bukkit.entity.TropicalFish;
+@@ -289,6 +292,20 @@ public class CraftMetaTropicalFishBucket extends CraftMetaItem implements Tropic
          return original != hash ? CraftMetaTropicalFishBucket.class.hashCode() ^ hash : hash;
      }
  

@@ -1,20 +1,20 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: skyouo0727 <skyouo@skyouo.engineer>
-Date: Tue, 15 Sep 2026 12:01:24 +0800
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 09:55:58 +0800
 Subject: [PATCH] Rebranding
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-index bc7e4e5560708fea89c584b1d8b471f4966f311a..27c434899d2a74053478aeb50ecb04543bb0685f 100644
+index 0e77ec2dec9ef92458e5c99f195ab48e7128a0dc..a4fbe68cbdc0e1fe8472aba14a9a5e9989401bdc 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-@@ -20,7 +20,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
+@@ -21,7 +21,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
      @Override
      protected LineReader buildReader(LineReaderBuilder builder) {
          builder
 -                .appName("Purpur") // Purpur - Rebrand
 +                .appName("Misteln") // Purpur - Rebrand // Misteln
-                 .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
+                 .variable(LineReader.HISTORY_FILE, PaperCacheDir.moveFromServerRootAndGet(".console_history", "console_history"))
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
@@ -64,7 +64,7 @@ index 554fc2c53b5028c8f89a0ae69a75e075ba4f4435..ce251b222d7339390d39d2b3406f4ddd
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index 048b96047ac737cf515682593d4632b3c60d98a7..04e7541c3da39a662d6a796d0ab970b307669e60 100644
+index 6cf4abdde885315d996e3d34f2bdd54cffbd91ed..be4bcf85a15018c3c53b9f06dc86f80fd57bf3d7 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -75,14 +75,14 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
@@ -98,7 +98,7 @@ index 048b96047ac737cf515682593d4632b3c60d98a7..04e7541c3da39a662d6a796d0ab970b3
 -                logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Purpur!):"); // Paper // Purpur - Rebrand
 +                logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Misteln!):"); // Paper // Purpur - Rebrand // Misteln
                  FeatureHooks.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - log detailed tick information
-                 WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.threadId(), Integer.MAX_VALUE), logger);
+                 WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().getRunningThread().threadId(), Integer.MAX_VALUE), logger);
                  logger.log(Level.SEVERE, "------------------------------");
 @@ -120,7 +120,7 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
                          WatchdogThread.dumpThread(thread, logger);

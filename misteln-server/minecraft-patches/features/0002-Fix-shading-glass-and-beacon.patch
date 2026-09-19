@@ -1,60 +1,60 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Tue, 15 Sep 2026 12:01:40 +0800
+Date: Sat, 19 Sep 2026 10:01:50 +0800
 Subject: [PATCH] Fix shading glass and beacon
 
 
 diff --git a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-index cc301cff64e1bf604a1432f6e36be8aa17db53e7..5379965319e8d2b4eb0263ff743270610d496fc6 100644
+index c7b3d34f4a44f0b7164ee35a6496d8357dae1c68..d0bcb292e5528a6b18d9493252ceb2855edf7787 100644
 --- a/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
-@@ -69,6 +69,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -71,6 +71,7 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
      private List<BeaconBeamOwner.Section> checkingBeamSections = new ArrayList<>();
      public int levels;
      private int lastCheckY;
 +    private boolean checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
-     @Nullable public Holder<MobEffect> primaryPower;
-     @Nullable public Holder<MobEffect> secondaryPower;
-     public @Nullable Component name;
-@@ -176,11 +177,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+     public @Nullable Holder<MobEffect> primaryPower;
+     public @Nullable Holder<MobEffect> secondaryPower;
+     private @Nullable Component name;
+@@ -178,11 +179,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
          int y = pos.getY();
          int z = pos.getZ();
-         BlockPos blockPos;
+         BlockPos checkPos;
 -        boolean isTintedGlass = false; // Purpur - allow beacon effects when covered by tinted glass
-         if (blockEntity.lastCheckY < y) {
-             blockPos = pos;
-             blockEntity.checkingBeamSections = Lists.newArrayList();
-             blockEntity.lastCheckY = pos.getY() - 1;
-+            blockEntity.checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
+         if (entity.lastCheckY < y) {
+             checkPos = pos;
+             entity.checkingBeamSections = Lists.newArrayList();
+             entity.lastCheckY = checkPos.getY() - 1;
++            entity.checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
          } else {
-             blockPos = new BlockPos(x, blockEntity.lastCheckY + 1, z);
+             checkPos = new BlockPos(x, entity.lastCheckY + 1, z);
          }
-@@ -206,12 +207,12 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -208,12 +209,12 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
                      }
                  }
              } else {
--                if (level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockState.getBlock().equals(Blocks.TINTED_GLASS)) {isTintedGlass = true;} // Purpur - allow beacon effects when covered by tinted glass
-+                if (level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockState.getBlock().equals(Blocks.TINTED_GLASS)) {blockEntity.checkingTintedGlass = true;} // Purpur - allow beacon effects when covered by tinted glass // Misteln - Fix shading glass and beacon
+-                if (level.purpurConfig.beaconAllowEffectsWithTintedGlass && state.getBlock().equals(Blocks.TINTED_GLASS)) {isTintedGlass = true;} // Purpur - allow beacon effects when covered by tinted glass
++                if (level.purpurConfig.beaconAllowEffectsWithTintedGlass && state.getBlock().equals(Blocks.TINTED_GLASS)) {entity.checkingTintedGlass = true;} // Purpur - allow beacon effects when covered by tinted glass // Misteln - Fix shading glass and beacon
                  // Purpur start - fix effects being applied when tinted glass is covered
-                 if (section == null || blockState.getLightBlock() >= 15 && !blockState.is(Blocks.BEDROCK) && !(blockState.getBlock().equals(Blocks.TINTED_GLASS) && level.purpurConfig.beaconAllowEffectsWithTintedGlass)) {
-                     blockEntity.checkingBeamSections.clear();
-                     blockEntity.lastCheckY = height;
+                 if (lastBeamSection == null || state.getLightDampening() >= 15 && !state.is(Blocks.BEDROCK) && !(state.getBlock().equals(Blocks.TINTED_GLASS) && level.purpurConfig.beaconAllowEffectsWithTintedGlass)) {
+                     entity.checkingBeamSections.clear();
+                     entity.lastCheckY = lastSetBlock;
 -                    isTintedGlass = false;
-+                    blockEntity.checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
++                    entity.checkingTintedGlass = false; // Misteln - Fix shading glass and beacon
                      break;
                  }
                  // Purpur end - fix effects being applied when tinted glass is covered
-@@ -225,11 +226,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+@@ -227,11 +228,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
  
-         int i = blockEntity.levels; final int originalLevels = i; // Paper - OBFHELPER
+         int previousLevels = entity.levels;
          if (level.getGameTime() % 80L == 0L) {
--            if (!blockEntity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && isTintedGlass)) { // Purpur - fix beacon effects persisting with broken base while tinted glass is used
-+            if (!blockEntity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockEntity.checkingTintedGlass)) { // Purpur - fix beacon effects persisting with broken base while tinted glass is used // Misteln - Fix shading glass and beacon
-                 blockEntity.levels = updateBase(level, x, y, z);
+-            if (!entity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && isTintedGlass)) { // Purpur - fix beacon effects persisting with broken base while tinted glass is used
++            if (!entity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && entity.checkingTintedGlass)) { // Purpur - fix beacon effects persisting with broken base while tinted glass is used // Misteln - Fix shading glass and beacon
+                 entity.levels = updateBase(level, x, y, z);
              }
  
--            if (blockEntity.levels > 0 && (!blockEntity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && isTintedGlass))) { // Purpur - allow beacon effects when covered by tinted glass
-+            if (blockEntity.levels > 0 && (!blockEntity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && blockEntity.checkingTintedGlass))) { // Purpur - allow beacon effects when covered by tinted glass // Misteln - Fix shading glass and beacon
-                 applyEffects(level, pos, blockEntity.levels, blockEntity.primaryPower, blockEntity.secondaryPower, blockEntity); // Paper - Custom beacon ranges
+-            if (entity.levels > 0 && (!entity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && isTintedGlass))) { // Purpur - allow beacon effects when covered by tinted glass
++            if (entity.levels > 0 && (!entity.beamSections.isEmpty() || (level.purpurConfig.beaconAllowEffectsWithTintedGlass && entity.checkingTintedGlass))) { // Purpur - allow beacon effects when covered by tinted glass // Misteln - Fix shading glass and beacon
+                 applyEffects(level, pos, entity.levels, entity.primaryPower, entity.secondaryPower, entity); // Paper - Custom beacon ranges
                  playSound(level, pos, SoundEvents.BEACON_AMBIENT);
              }

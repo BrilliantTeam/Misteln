@@ -1,22 +1,22 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Thu, 17 Sep 2026 23:07:18 +0800
+Date: Sat, 19 Sep 2026 09:55:59 +0800
 Subject: [PATCH] Upgrade JSON items with DataConverter
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 89d8e918f5e0242c7aa10b3e78382130a4631d00..2505494734d48390b1efc89fa7257f83631cec6f 100644
+index 80317dc41f85b91d7219f370d6f51e79496b09c4..447c4bda9fa6a7ebda5e48d160da8006efbcd3c3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -640,12 +640,58 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -539,12 +539,58 @@ public final class CraftMagicNumbers implements UnsafeValues {
      public ItemStack deserializeItemFromJson(com.google.gson.JsonObject data) throws IllegalArgumentException {
          Preconditions.checkNotNull(data, "null cannot be deserialized");
  
 +        // Misteln start - upgrade JSON items with DataConverter like the other item formats, so they get the same conversions
-         final int dataVersion = data.get("DataVersion").getAsInt();
--        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
--        data = (com.google.gson.JsonObject) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
--        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
+         final int dataVersion = data.get(SharedConstants.DATA_VERSION_TAG).getAsInt();
+-        final int currentVersion = this.getDataVersion();
+-        data = (com.google.gson.JsonObject) MinecraftServer.getServer().getFixerUpper().update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
+-        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
 -        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
 +        final CompoundTag compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), (CompoundTag) mistelnJsonToNbt(null, data), dataVersion, this.getDataVersion());
 +        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(
@@ -28,10 +28,10 @@ index 89d8e918f5e0242c7aa10b3e78382130a4631d00..2505494734d48390b1efc89fa7257f83
 +    // Misteln start - JSON items keep custom and entity data as SNBT to preserve the NBT types, the rest maps to the closest tag
 +    private static final Set<String> MISTELN_SNBT_KEYS = Set.of("minecraft:custom_data", "minecraft:block_entity_data", "minecraft:entity_data", "minecraft:bucket_entity_data", "entity_data");
 +
-+    private static Tag mistelnJsonToNbt(final @org.jspecify.annotations.Nullable String key, final JsonElement json) {
++    private static Tag mistelnJsonToNbt(final @org.jspecify.annotations.Nullable String key, final com.google.gson.JsonElement json) {
 +        if (json instanceof com.google.gson.JsonObject object) {
 +            final CompoundTag tag = new CompoundTag();
-+            for (final Map.Entry<String, JsonElement> entry : object.entrySet()) {
++            for (final Map.Entry<String, com.google.gson.JsonElement> entry : object.entrySet()) {
 +                if (!entry.getValue().isJsonNull()) {
 +                    tag.put(entry.getKey(), mistelnJsonToNbt(entry.getKey(), entry.getValue()));
 +                }
@@ -40,7 +40,7 @@ index 89d8e918f5e0242c7aa10b3e78382130a4631d00..2505494734d48390b1efc89fa7257f83
 +        }
 +        if (json instanceof com.google.gson.JsonArray array) {
 +            final net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
-+            for (final JsonElement element : array) {
++            for (final com.google.gson.JsonElement element : array) {
 +                list.add(mistelnJsonToNbt(null, element));
 +            }
 +            return list;
@@ -73,7 +73,7 @@ index 89d8e918f5e0242c7aa10b3e78382130a4631d00..2505494734d48390b1efc89fa7257f83
      public byte[] serializeEntity(org.bukkit.entity.Entity entity, EntitySerializationFlag... serializationFlags) {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..05af99e79e4f09ce326453cf963b9f612c438def
+index 0000000000000000000000000000000000000000..0719fe9655b242945f0818dd0059c48e432e9ace
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
 @@ -0,0 +1,139 @@
@@ -161,7 +161,7 @@ index 0000000000000000000000000000000000000000..05af99e79e4f09ce326453cf963b9f61
 +        tag.putInt("DataVersion", V1_21_4);
 +        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 +        NbtIo.writeCompressed(tag, bytes);
-+        ItemStack fromBytes = CraftMagicNumbers.INSTANCE.deserializeItem(bytes.toByteArray());
++        ItemStack fromBytes = ItemStack.deserializeBytes(bytes.toByteArray());
 +        ItemStack fromJson = CraftMagicNumbers.INSTANCE.deserializeItemFromJson(JsonParser.parseString(json).getAsJsonObject());
 +        assertTrue(net.minecraft.world.item.ItemStack.matches(CraftItemStack.unwrap(fromBytes), CraftItemStack.unwrap(fromJson)), "json " + CraftItemStack.unwrap(fromJson).getComponentsPatch() + " bytes " + CraftItemStack.unwrap(fromBytes).getComponentsPatch());
 +    }
@@ -186,7 +186,7 @@ index 0000000000000000000000000000000000000000..05af99e79e4f09ce326453cf963b9f61
 +        ).getAsJsonObject());
 +        var data = CraftItemStack.unwrap(sign).get(DataComponents.BLOCK_ENTITY_DATA);
 +        assertNotNull(data);
-+        assertEquals(BlockEntityType.SIGN, data.type());
++        assertEquals(net.minecraft.world.level.block.entity.BlockEntityTypes.SIGN, data.type());
 +        CompoundTag front = data.copyTagWithoutId().getCompoundOrEmpty("front_text");
 +        assertEquals("sign item", front.getListOrEmpty("messages").getCompoundOrEmpty(0).getStringOr("text", null), front.toString());
 +    }

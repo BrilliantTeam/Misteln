@@ -1,26 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Tue, 15 Sep 2026 12:08:06 +0800
+Date: Sat, 19 Sep 2026 10:01:51 +0800
 Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
- 1.20.5/6 to 1.21 upgrade
 
 
 diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-index e42e6d01a8bb1bca5dea440d3f002ead68590e11..3317f9b71f1c80092c25c1c2a325f67eddb3a944 100644
+index 82fb9b7092ee37bb4b46ad9a352df64821259ddc..a3e182893ca8f5d2a1463234efddbe8fa6e66cbe 100644
 --- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
 +++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-@@ -197,7 +197,7 @@ public class AttributeInstance {
+@@ -201,7 +201,7 @@ public class AttributeInstance {
      }
  
      public record Packed(Holder<Attribute> attribute, double baseValue, List<AttributeModifier> modifiers) {
 -        public static final Codec<AttributeInstance.Packed> CODEC = RecordCodecBuilder.create(
 +        private static final Codec<AttributeInstance.Packed> CURRENT_CODEC = RecordCodecBuilder.create( // Misteln - DFU: renamed from CODEC, see below
-             instance -> instance.group(
+             i -> i.group(
                      BuiltInRegistries.ATTRIBUTE.holderByNameCodec().fieldOf("id").forGetter(AttributeInstance.Packed::attribute),
-                     Codec.DOUBLE.fieldOf("base").orElse(0.0).forGetter(AttributeInstance.Packed::baseValue),
-@@ -205,6 +205,60 @@ public class AttributeInstance {
+                     ExtraCodecs.optionalAlwaysPresentFieldOf(Codec.DOUBLE, "base", 0.0).forGetter(AttributeInstance.Packed::baseValue),
+@@ -209,6 +209,60 @@ public class AttributeInstance {
                  )
-                 .apply(instance, AttributeInstance.Packed::new)
+                 .apply(i, AttributeInstance.Packed::new)
          );
 +        // Misteln start - DFU: upgrade legacy attribute data that bypassed the data converter (e.g. entity NBT merged by plugins)
 +        public static final Codec<AttributeInstance.Packed> CODEC = Codec.of(CURRENT_CODEC, new com.mojang.serialization.Decoder<AttributeInstance.Packed>() {

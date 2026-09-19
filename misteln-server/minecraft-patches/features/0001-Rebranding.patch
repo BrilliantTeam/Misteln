@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: skyouo0727 <skyouo@skyouo.engineer>
-Date: Tue, 15 Sep 2026 12:01:24 +0800
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 10:01:49 +0800
 Subject: [PATCH] Rebranding
 
 
 diff --git a/net/minecraft/CrashReport.java b/net/minecraft/CrashReport.java
-index 2c60f1d955b17cbc79b5372c536e5463f6c0a186..84497e53966e0faa565549b9658f87b6793d199a 100644
+index c06d8ab454622d4488b6fb2e925fb52769929c51..60dc30dea485cecdbe588e961278626e9b4f5ce1 100644
 --- a/net/minecraft/CrashReport.java
 +++ b/net/minecraft/CrashReport.java
 @@ -30,7 +30,7 @@ public class CrashReport {
@@ -15,5 +15,5 @@ index 2c60f1d955b17cbc79b5372c536e5463f6c0a186..84497e53966e0faa565549b9658f87b6
 -    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!", ""); // Purpur - Rebrand
 +    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER/PURPUR! REPORT TO MISTELN INSTEAD!", ""); // Purpur - Rebrand // Misteln
  
-     public CrashReport(String title, Throwable exception) {
+     public CrashReport(final String title, final Throwable t) {
          this.title = title;

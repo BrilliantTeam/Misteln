@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Tue, 15 Sep 2026 12:11:55 +0800
+Date: Sat, 19 Sep 2026 09:55:59 +0800
 Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.1 to 1.21.4
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 4abee7b6d922be34d216769af2ff55b58dda78b9..e29ecaa2cf79b2c860ec4bcda5aa8c318abf9960 100644
+index 70e21e1fc337c6ea40e64020fa1832d1630cae97..968d80a4b164281e7b66bb04c820e31ff1cd7c1a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-@@ -49,6 +49,7 @@ public final class CraftItemFactory implements ItemFactory {
+@@ -48,6 +48,7 @@ public final class CraftItemFactory implements ItemFactory {
          ConfigurationSerialization.registerClass(CraftCustomModelDataComponent.class);
          ConfigurationSerialization.registerClass(CraftEquippableComponent.class);
          ConfigurationSerialization.registerClass(CraftFoodComponent.class);
@@ -17,7 +17,7 @@ index 4abee7b6d922be34d216769af2ff55b58dda78b9..e29ecaa2cf79b2c860ec4bcda5aa8c31
          ConfigurationSerialization.registerClass(CraftToolComponent.CraftToolRule.class);
          ConfigurationSerialization.registerClass(CraftJukeboxComponent.class);
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 7b320ae8961af147d39c75efdc69901119f481c5..ea97ff112847ce63a7872f5525432f19c0542974 100644
+index 197885a1231d0548fae6967812a232c0e9f279a8..1293e1401e900b6e5893da91624486c4a4a74e69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -77,6 +77,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -80,10 +80,10 @@ index 7b320ae8961af147d39c75efdc69901119f481c5..ea97ff112847ce63a7872f5525432f19
      // Misteln end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd83a779f1 100644
+index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b912b7f6c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -347,6 +347,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -356,6 +356,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
  
      private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -95,8 +95,8 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
  
      CraftMetaItem(CraftMetaItem meta) {
          if (meta == null) {
-@@ -695,6 +700,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-                 this.setDamageResistant(tag);
+@@ -695,6 +700,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+                 this.damageResistantTypes = damageResistantTypes;
              }
          }
 +        // Misteln start - DFU: fire-resistant was replaced by damage-resistant #minecraft:is_fire in 1.21.2 (see V4064)
@@ -107,7 +107,7 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
  
          Integer maxStackSize = SerializableMeta.getObject(Integer.class, map, CraftMetaItem.MAX_STACK_SIZE.BUKKIT, true);
          if (maxStackSize != null) {
-@@ -719,6 +729,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -719,6 +729,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          CraftFoodComponent food = SerializableMeta.getObject(CraftFoodComponent.class, map, CraftMetaItem.FOOD.BUKKIT, true);
          if (food != null) {
              this.setFood(food);
@@ -122,16 +122,16 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
          }
  
          CraftToolComponent tool = SerializableMeta.getObject(CraftToolComponent.class, map, CraftMetaItem.TOOL.BUKKIT, true);
-@@ -762,25 +780,11 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -762,25 +780,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
              ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(unhandled));
              try {
                  CompoundTag unhandledTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
 -                DataComponentPatch unhandledPatch = DataComponentPatch.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), unhandledTag).result().get();
 -
--                CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
+-                getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
 -                    this.canPlaceOnPredicates = List.copyOf(data.predicates);
 -                });
--                CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_BREAK).ifPresent(data -> {
+-                getOrEmpty(unhandledPatch, CraftMetaItem.CAN_BREAK).ifPresent(data -> {
 -                    this.canBreakPredicates = List.copyOf(data.predicates);
 -                });
 -                this.unhandledTags.copy(unhandledPatch.forget(type -> type == CraftMetaItem.CAN_PLACE_ON.TYPE || type == CraftMetaItem.CAN_BREAK.TYPE));
@@ -153,7 +153,7 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
              } catch (IOException ex) {
                  LOGGER.error("Failed to read unhandled tag for item", ex);
              }
-@@ -817,6 +821,28 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -817,6 +821,28 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
      }
  
@@ -182,7 +182,7 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
      void deserializeInternal(CompoundTag tag, Object context) {
          // SPIGOT-4576: Need to migrate from internal to proper data
          if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
-@@ -2415,6 +2441,39 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -2451,6 +2477,39 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      @Override
      public void setVersion(int version) {
          this.version = version;
@@ -221,10 +221,10 @@ index c44f6294b456f880f70f8d7df645d17009e5ebaa..eb8930231f1cb6d38281f6f1ae5954cd
 +        // Misteln end
      }
  
-     // Paper start - improve checking handled tags
+     @org.jetbrains.annotations.VisibleForTesting
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgrader.java b/src/main/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgrader.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..68c25dcb80f733fd1c061550bbf55c920a9fa7a0
+index 0000000000000000000000000000000000000000..0bcbba42ac2ff89769c89fb609b56e294900d6b0
 --- /dev/null
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgrader.java
 @@ -0,0 +1,46 @@
@@ -265,7 +265,7 @@ index 0000000000000000000000000000000000000000..68c25dcb80f733fd1c061550bbf55c92
 +        final CompoundTag copy = tag.copy();
 +        final boolean addId = type != null && copy.getString("id").isEmpty();
 +        if (addId) {
-+            copy.putString("id", BlockEntityType.getKey(type).toString());
++            copy.putString("id", net.minecraft.core.registries.BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type).toString());
 +        }
 +        final CompoundTag converted = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, copy, fromVersion, CraftMagicNumbers.INSTANCE.getDataVersion());
 +        if (addId) {
@@ -275,10 +275,10 @@ index 0000000000000000000000000000000000000000..68c25dcb80f733fd1c061550bbf55c92
 +    }
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-index 256f7fc3278488183b394018eb8c6b79967d14d4..62d7d4848d5d1404d8a21a541061a74443c88e72 100644
+index 421384d133632a4bcc4526a291effe5d2b8ec74f..370d4d07ea42f4d06b8c75ced4488ef716136068 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/components/CraftFoodComponent.java
-@@ -12,6 +12,10 @@ import org.bukkit.inventory.meta.components.FoodComponent;
+@@ -14,6 +14,10 @@ import static io.papermc.paper.util.BoundChecker.requireNonNegative;
  public final class CraftFoodComponent implements FoodComponent {
  
      private FoodProperties handle;
@@ -289,7 +289,7 @@ index 256f7fc3278488183b394018eb8c6b79967d14d4..62d7d4848d5d1404d8a21a541061a744
  
      public CraftFoodComponent(FoodProperties food) {
          this.handle = food;
-@@ -27,7 +31,47 @@ public final class CraftFoodComponent implements FoodComponent {
+@@ -29,7 +33,47 @@ public final class CraftFoodComponent implements FoodComponent {
          Boolean canAlwaysEat = SerializableMeta.getBoolean(map, "can-always-eat");
  
          this.handle = new FoodProperties(nutrition, saturationModifier, canAlwaysEat);
@@ -339,7 +339,7 @@ index 256f7fc3278488183b394018eb8c6b79967d14d4..62d7d4848d5d1404d8a21a541061a744
      public Map<String, Object> serialize() {
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f8b9035f246c453fd574999a4ce892572d95e8f6
+index 0000000000000000000000000000000000000000..23317cdb56f3c0933513417c08de8d044348d7ea
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 @@ -0,0 +1,249 @@
@@ -585,7 +585,7 @@ index 0000000000000000000000000000000000000000..f8b9035f246c453fd574999a4ce89257
 +        list.add(renamed);
 +        list.add(legacy);
 +
-+        AttributeMap map = new AttributeMap(DefaultAttributes.getSupplier(net.minecraft.world.entity.EntityType.ZOMBIE));
++        AttributeMap map = new AttributeMap(DefaultAttributes.getSupplier(net.minecraft.world.entity.EntityTypes.ZOMBIE));
 +        map.apply(AttributeInstance.Packed.LIST_CODEC.parse(NbtOps.INSTANCE, list).getOrThrow());
 +
 +        assertEquals(40.0, map.getBaseValue(Attributes.MAX_HEALTH));

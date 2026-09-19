@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Tue, 15 Sep 2026 12:11:55 +0800
+Date: Sat, 19 Sep 2026 10:01:51 +0800
 Subject: [PATCH] Upgrade entity attribute ids from 1.21.1 to 1.21.4
 
 
 diff --git a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-index 3317f9b71f1c80092c25c1c2a325f67eddb3a944..4235f41c8457e370d0c5d8c2556f835f99426815 100644
+index a3e182893ca8f5d2a1463234efddbe8fa6e66cbe..ffa54c1904911255ea17170ae582b0e526e7dfb5 100644
 --- a/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
 +++ b/net/minecraft/world/entity/ai/attributes/AttributeInstance.java
-@@ -223,9 +223,28 @@ public class AttributeInstance {
+@@ -227,9 +227,28 @@ public class AttributeInstance {
              if (modifiers.isPresent()) {
                  attribute = attribute.set("modifiers", attribute.createList(modifiers.get().map(Packed::upgradeLegacyModifier)));
              }

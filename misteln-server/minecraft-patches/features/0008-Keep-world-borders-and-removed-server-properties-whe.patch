@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 10:01:52 +0800
+Subject: [PATCH] Keep world borders and removed server properties when
+
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServerProperties.java b/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 425d071c5cb51c596748093b16bb2ac8386e10dd..7f9294b8d55d8aa424385c994df26766bf2876cf 100644
+--- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -81,6 +81,20 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     public final String managementServerTlsKeystorePassword = this.get("management-server-tls-keystore-password", "");
+     public final String managementServerAllowedOrigins = this.get("management-server-allowed-origins", "");
+     public final @Nullable Boolean announcePlayerAchievements = this.getLegacyBoolean("announce-player-achievements");
++    // Misteln start - properties removed in 1.21.9, applied to the game rules of worlds saved before that
++    public static @Nullable Boolean mistelnLegacyPvp;
++    public static @Nullable Boolean mistelnLegacySpawnMonsters;
++    public static @Nullable Boolean mistelnLegacyEnableCommandBlock;
++    {
++        // the first read removes them from the file, later reloads keep the remembered values
++        final Boolean pvp = this.getLegacyBoolean("pvp");
++        final Boolean spawnMonsters = this.getLegacyBoolean("spawn-monsters");
++        final Boolean enableCommandBlock = this.getLegacyBoolean("enable-command-block");
++        if (pvp != null) mistelnLegacyPvp = pvp;
++        if (spawnMonsters != null) mistelnLegacySpawnMonsters = spawnMonsters;
++        if (enableCommandBlock != null) mistelnLegacyEnableCommandBlock = enableCommandBlock;
++    }
++    // Misteln end - properties removed in 1.21.9, applied to the game rules of worlds saved before that
+     public final boolean enableQuery = this.get("enable-query", false);
+     public final int queryPort = this.get("query.port", 25565);
+     public final boolean enableRcon = this.get("enable-rcon", false);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 32548bd7967a93436c148ab4284b01bdced05fed..53570ad681548330999e2188c8940b170d98cd5e 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -633,7 +633,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperLevelOverrides.TYPE, levelData);
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldMetadata.TYPE, new io.papermc.paper.world.saveddata.PaperWorldMetadata(loadedWorldData.uuid()));
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
+-        final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
++        // Misteln start - keep pvp, spawn-monsters and enable-command-block of worlds saved before 1.21.9 turned them into game rules
++        final net.minecraft.world.level.gamerules.GameRuleMap savedGameRules = savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE);
++        final boolean rulesSavedBeforeTheProperties = !savedGameRules.has(GameRules.PVP);
++        final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedGameRules);
++        if (rulesSavedBeforeTheProperties) {
++            final Boolean pvp = net.minecraft.server.dedicated.DedicatedServerProperties.mistelnLegacyPvp;
++            final Boolean spawnMonsters = net.minecraft.server.dedicated.DedicatedServerProperties.mistelnLegacySpawnMonsters;
++            final Boolean commandBlocks = net.minecraft.server.dedicated.DedicatedServerProperties.mistelnLegacyEnableCommandBlock;
++            if (pvp != null) gameRules.set(GameRules.PVP, pvp, null);
++            if (spawnMonsters != null) gameRules.set(GameRules.SPAWN_MONSTERS, spawnMonsters, null);
++            if (commandBlocks != null) gameRules.set(GameRules.COMMAND_BLOCKS_WORK, commandBlocks, null);
++        }
++        // Misteln end - keep pvp, spawn-monsters and enable-command-block of worlds saved before 1.21.9 turned them into game rules
+         this.gameRules = gameRules;
+         super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules)), executor); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
+         this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
+diff --git a/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java b/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java
+index 442410a814c7cfea5b948396fd488c1f332b64a0..22b609e6d964ab1ffe6957481046b6bd470b3369 100644
+--- a/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java
++++ b/net/minecraft/util/filefix/fixes/LevelDatToSavedDataFileFix.java
+@@ -30,6 +30,7 @@ public class LevelDatToSavedDataFileFix extends FileFix {
+     private static final String THE_END = "the_end";
+     private static final String WORLD_BORDER_KEY = "world_border";
+     private static final String WORLD_BORDER_FILE_NAME = "minecraft/world_border.dat";
++    private static final int WORLD_BORDER_TICKS_VERSION = 4657; // Misteln - DFU: 25w43a+2, when the world border started counting ticks
+ 
+     public LevelDatToSavedDataFileFix(final Schema schema) {
+         super(schema);
+@@ -141,9 +142,11 @@ public class LevelDatToSavedDataFileFix extends FileFix {
+         final FileAccess<? extends CompressedNbt> worldBorderEnd,
+         final Dynamic<?> content
+     ) {
++        // Misteln start - every world keeps its own level.dat with its border in its own coordinates, so nothing is scaled
+         extractWorldBorderToFile(worldBorderOverworld, content, 1.0);
+-        extractWorldBorderToFile(worldBorderNether, content, 8.0);
++        extractWorldBorderToFile(worldBorderNether, content, 1.0);
+         extractWorldBorderToFile(worldBorderEnd, content, 1.0);
++        // Misteln end - every world keeps its own level.dat with its border in its own coordinates, so nothing is scaled
+         return content.remove("world_border");
+     }
+ 
+@@ -154,6 +157,13 @@ public class LevelDatToSavedDataFileFix extends FileFix {
+                 .get()
+                 .update("center_x", x -> x.createDouble(x.asDouble(0.0) / divider))
+                 .update("center_z", z -> z.createDouble(z.asDouble(0.0) / divider));
++            // Misteln start - a border still inside level.dat counted seconds and milliseconds; the tick conversions only run on the world border saved data, which this border never was
++            if (NbtUtils.getDataVersion(content) < WORLD_BORDER_TICKS_VERSION) {
++                worldBorderTag = worldBorderTag
++                    .update("warning_time", time -> time.createInt(time.asInt(15) * 20))
++                    .update("lerp_time", time -> time.createLong((time.asLong(0L) + 49L) / 50L));
++            }
++            // Misteln end - a border still inside level.dat counted seconds and milliseconds
+             targetFile.getOnlyFile().write(worldBorderTag);
+         }
+     }

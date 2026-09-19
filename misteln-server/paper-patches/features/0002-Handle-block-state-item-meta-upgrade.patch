@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: skyouo0727 <skyouo@skyouo.engineer>
-Date: Tue, 15 Sep 2026 12:06:28 +0800
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sat, 19 Sep 2026 09:55:58 +0800
 Subject: [PATCH] Handle block state item meta upgrade
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 4a8fbba451afb8d22fc9ae973911d179a8c81aeb..20e13a8ddc69f18ee154ddf9208124fffe593c8a 100644
+index 32a55c327ed363c08ea462f46aae5003f65469ab..5a5f6d387a6e763cd673af3d2821f84d0119056e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -142,7 +142,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta

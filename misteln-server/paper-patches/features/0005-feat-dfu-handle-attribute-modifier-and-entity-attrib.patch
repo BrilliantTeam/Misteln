@@ -1,12 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Tue, 15 Sep 2026 12:08:06 +0800
+Date: Sat, 19 Sep 2026 09:55:59 +0800
 Subject: [PATCH] feat(dfu): handle attribute modifier and entity attribute
- 1.20.5/6 to 1.21 upgrade
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
-index 20e13a8ddc69f18ee154ddf9208124fffe593c8a..7b320ae8961af147d39c75efdc69901119f481c5 100644
+index 5a5f6d387a6e763cd673af3d2821f84d0119056e..197885a1231d0548fae6967812a232c0e9f279a8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
 @@ -207,11 +207,27 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
@@ -38,11 +37,11 @@ index 20e13a8ddc69f18ee154ddf9208124fffe593c8a..7b320ae8961af147d39c75efdc699011
      void serializeInternal(final Map<String, Tag> internalTags) {
          // Paper start - new serialization format
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 3825cd713a42397204b13212a47d63626985b71b..c44f6294b456f880f70f8d7df645d17009e5ebaa 100644
+index 405d9367e3959c715d73505fd85fac3602e26116..6dea2bc7b73045aa76140c48b975f8f5550148a2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -824,6 +824,21 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
-         }
+@@ -837,6 +837,21 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+         return tag.getString(Entity.TAG_ID).filter(id -> id.equals(expectedId)).isPresent();
      }
  
 +    // Misteln start - attribute modifier id upgrade (1.20.5/6 -> 1.21), modifiers had a uuid and name instead of an id
@@ -63,7 +62,7 @@ index 3825cd713a42397204b13212a47d63626985b71b..c44f6294b456f880f70f8d7df645d170
      private static Multimap<Attribute, AttributeModifier> buildModifiersLegacy(CompoundTag tag, ItemMetaKey key) {
          Multimap<Attribute, AttributeModifier> modifiers = LinkedHashMultimap.create();
          ListTag mods = tag.getListOrEmpty(key.NBT);
-@@ -833,6 +848,12 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+@@ -846,6 +861,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  // entry is not an actual CompoundTag. getCompoundOrEmpty returns empty CompoundTag in that case
                  continue;
              }
