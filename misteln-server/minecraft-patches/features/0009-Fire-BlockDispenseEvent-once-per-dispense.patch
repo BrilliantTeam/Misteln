@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sun, 20 Sep 2026 08:47:20 +0800
+Subject: [PATCH] Fire BlockDispenseEvent once per dispense
+
+
+diff --git a/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java b/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java
+index f94ff9370ae3f1350e183e39f7fd677ea705fb41..569d5f5fabb0e4a15adff3c1b7a1d2ce1dc576f7 100644
+--- a/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/SulfurCubeBlockDispenseItemBehavior.java
+@@ -19,13 +19,19 @@ public class SulfurCubeBlockDispenseItemBehavior extends DefaultDispenseItemBeha
+ 
+     // Paper start - Call BlockDispenseEvent
+     public static boolean dispenseBlock(final ServerLevel level, final BlockPos pos, final ItemStack dispensed, final BlockSource source, final @org.jspecify.annotations.Nullable DispenseItemBehavior currentBehavior) {
++        // Misteln start - only fire BlockDispenseEvent when this behaviour can actually handle the dispense, otherwise the caller falls back to the default behaviour and fires a second event for the same dispense
++        java.util.List<SulfurCube> cubes = level.getEntitiesOfClass(SulfurCube.class, new AABB(pos));
++        if (cubes.isEmpty()) {
++            return false;
++        }
++        // Misteln end
+         ItemStack result = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDispenseEvent(source, pos, dispensed, currentBehavior);
+         if (result != null) { // todo - snapshot - setItem should probably override the equipped item + possible event in the for loop
+             return false;
+         }
+         // Paper end - Call BlockDispenseEvent
+ 
+-        for (SulfurCube entity : level.getEntitiesOfClass(SulfurCube.class, new AABB(pos))) {
++        for (SulfurCube entity : cubes) { // Misteln - reuse the lookup from above
+             if (entity.equipItem(dispensed)) {
+                 dispensed.shrink(1);
+                 return true;
