@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Wed, 23 Sep 2026 11:13:45 +0800
+Subject: [PATCH] Test the world border migration out of level.dat
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+diff --git a/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java b/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..76b924a4d275ddfde5538caee4f86cfc981e944e
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java
+@@ -0,0 +1,116 @@
++package org.bukkit.craftbukkit.util;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import com.mojang.serialization.Dynamic;
++import java.io.IOException;
++import java.lang.reflect.Method;
++import java.nio.file.Path;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtAccounter;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.NbtOps;
++import net.minecraft.util.datafix.fixes.References;
++import net.minecraft.util.filefix.access.FileAccess;
++import net.minecraft.util.filefix.access.FileAccessProvider;
++import net.minecraft.util.filefix.access.FileRelation;
++import net.minecraft.util.filefix.access.FileResourceTypes;
++import net.minecraft.util.filefix.access.SavedDataNbt;
++import net.minecraft.util.filefix.fixes.LevelDatToSavedDataFileFix;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.io.TempDir;
++
++// Misteln - DFU: a border still inside level.dat counted seconds and milliseconds and is in the coordinates of its own world
++@Normal
++public class WorldBorderMigrationTest {
++
++    private static final int V1_21_4 = 4189;
++    private static final int V1_21_11 = 4671;
++    private static final int TARGET = 4999;
++    private static final String[] DIMENSIONS = {"overworld", "the_nether", "the_end"};
++
++    @TempDir
++    Path world;
++
++    private void migrate(int dataVersion, int warningTime, long lerpTime) throws Exception {
++        CompoundTag border = new CompoundTag();
++        border.putDouble("center_x", 800.0);
++        border.putDouble("center_z", -400.0);
++        border.putDouble("size", 1000.0);
++        border.putInt("warning_time", warningTime);
++        border.putLong("lerp_time", lerpTime);
++
++        CompoundTag content = new CompoundTag();
++        content.putInt("DataVersion", dataVersion);
++        content.put("world_border", border);
++
++        Method extract = LevelDatToSavedDataFileFix.class.getDeclaredMethod(
++            "extractWorldBorderToFiles", FileAccess.class, FileAccess.class, FileAccess.class, Dynamic.class);
++        extract.setAccessible(true);
++
++        try (FileAccessProvider files = new FileAccessProvider(TARGET)) {
++            FileAccess<SavedDataNbt> overworld = this.access(files, DIMENSIONS[0]);
++            FileAccess<SavedDataNbt> nether = this.access(files, DIMENSIONS[1]);
++            FileAccess<SavedDataNbt> end = this.access(files, DIMENSIONS[2]);
++
++            ScopedValue.where(files.baseDirectory(), this.world).run(() -> {
++                try {
++                    extract.invoke(null, overworld, nether, end, new Dynamic<>(NbtOps.INSTANCE, content));
++                } catch (ReflectiveOperationException e) {
++                    throw new AssertionError(e.getCause() != null ? e.getCause() : e);
++                }
++            });
++        }
++    }
++
++    private FileAccess<SavedDataNbt> access(FileAccessProvider files, String dimension) {
++        return files.getFileAccess(
++            FileResourceTypes.savedData(References.SAVED_DATA_WORLD_BORDER),
++            FileRelation.forDataFileInDimension(dimension, "minecraft/world_border.dat")
++        );
++    }
++
++    private CompoundTag written(String dimension) throws IOException {
++        Path path = this.world.resolve("dimensions/minecraft/" + dimension + "/data/minecraft/world_border.dat");
++        return NbtIo.readCompressed(path, NbtAccounter.defaultQuota());
++    }
++
++    @Test
++    public void testBorderSavedBeforeTicks() throws Exception {
++        this.migrate(V1_21_4, 15, 60000L);
++
++        CompoundTag file = this.written("overworld");
++        CompoundTag data = file.getCompoundOrEmpty("data");
++        assertEquals(300, data.getIntOr("warning_time", -1), "the warning time was seconds");
++        assertEquals(1200L, data.getLongOr("lerp_time", -1L), "the lerp time was milliseconds");
++        assertEquals(TARGET, file.getIntOr("DataVersion", -1), "the written file is stamped current, so the saved data converters must not convert it a second time");
++    }
++
++    @Test
++    public void testBorderSavedInTicks() throws Exception {
++        this.migrate(V1_21_11, 300, 1200L);
++
++        CompoundTag data = this.written("overworld").getCompoundOrEmpty("data");
++        assertEquals(300, data.getIntOr("warning_time", -1), "a border that already counts ticks must not be converted again");
++        assertEquals(1200L, data.getLongOr("lerp_time", -1L), "a border that already counts ticks must not be converted again");
++    }
++
++    @Test
++    public void testShortLerpTimeKeepsATick() throws Exception {
++        this.migrate(V1_21_4, 15, 25L);
++
++        CompoundTag data = this.written("overworld").getCompoundOrEmpty("data");
++        assertEquals(1L, data.getLongOr("lerp_time", -1L), "a lerp shorter than a tick still takes a tick");
++    }
++
++    @Test
++    public void testBorderIsNotScaledPerDimension() throws Exception {
++        this.migrate(V1_21_4, 15, 0L);
++
++        for (String dimension : DIMENSIONS) {
++            CompoundTag data = this.written(dimension).getCompoundOrEmpty("data");
++            assertEquals(800.0, data.getDoubleOr("center_x", 0.0), "every world keeps its own level.dat with its border in its own coordinates: " + dimension);
++            assertEquals(-400.0, data.getDoubleOr("center_z", 0.0), "every world keeps its own level.dat with its border in its own coordinates: " + dimension);
++        }
++    }
++}
