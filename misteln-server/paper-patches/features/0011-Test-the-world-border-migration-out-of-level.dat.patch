@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Wed, 23 Sep 2026 11:21:01 +0800
+Subject: [PATCH] Test the world border migration out of level.dat
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+diff --git a/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java b/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..03ed08c6b5c59b932670a77c61afcd11c8d1e997
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java
+@@ -0,0 +1,43 @@
++package org.bukkit.craftbukkit.util;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.border.WorldBorder;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.api.Test;
++
++// Misteln - DFU: a border still inside level.dat counted seconds and milliseconds and is in the coordinates of its own world
++@Normal
++public class WorldBorderMigrationTest {
++
++    private static final WorldBorder.Settings LEGACY = new WorldBorder.Settings(800.0, -400.0, 0.2, 5.0, 5, 15, 1000.0, 60000L, 2000.0);
++
++    @Test
++    public void testSecondsAndMillisecondsBecomeTicks() {
++        WorldBorder.Settings ticks = MinecraftServer.mistelnBorderToTicks(LEGACY);
++
++        assertEquals(300, ticks.warningTime(), "the warning time was seconds");
++        assertEquals(1200L, ticks.lerpTime(), "the lerp time was milliseconds");
++    }
++
++    @Test
++    public void testShortLerpTimeKeepsATick() {
++        WorldBorder.Settings ticks = MinecraftServer.mistelnBorderToTicks(
++            new WorldBorder.Settings(0.0, 0.0, 0.2, 5.0, 5, 15, 1000.0, 25L, 1000.0));
++
++        assertEquals(1L, ticks.lerpTime(), "a lerp shorter than a tick still takes a tick");
++    }
++
++    @Test
++    public void testEverythingElseIsKept() {
++        WorldBorder.Settings ticks = MinecraftServer.mistelnBorderToTicks(LEGACY);
++
++        assertEquals(800.0, ticks.centerX(), "every world keeps its own level.dat with its border in its own coordinates");
++        assertEquals(-400.0, ticks.centerZ(), "every world keeps its own level.dat with its border in its own coordinates");
++        assertEquals(0.2, ticks.damagePerBlock());
++        assertEquals(5.0, ticks.safeZone());
++        assertEquals(5, ticks.warningBlocks());
++        assertEquals(1000.0, ticks.size());
++        assertEquals(2000.0, ticks.lerpTarget());
++    }
++}

@@ -6,7 +6,7 @@ Subject: [PATCH] Keep world borders and removed server properties when
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 4af19f9f5152e9f6386e375a1ac5280ce00f48ea..8f736d2090219192755ec88f7781978d320712b0 100644
+index 4af19f9f5152e9f6386e375a1ac5280ce00f48ea..abcce1f912f097ae91fe515830ac84d138bf80e8 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -738,6 +738,17 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -27,31 +27,51 @@ index 4af19f9f5152e9f6386e375a1ac5280ce00f48ea..8f736d2090219192755ec88f7781978d
          this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(serverLevel.getWorld()));
      // Paper end - rework world loading process
          if (!serverLevelData.isInitialized()) {
-@@ -777,18 +788,19 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -777,19 +788,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  WorldBorder.Settings settings = legacyWorldBorderSettings.get();
                  DimensionDataStorage dataStorage1 = serverLevel1.getDataStorage();
                  if (dataStorage1.get(WorldBorder.TYPE) == null) {
 -                    double coordinateScale = serverLevel1.dimensionType().coordinateScale();
-+                    // Misteln start - every world saved its own border in its own coordinates; up to 1.21.10 the level.dat border counted seconds and milliseconds, not ticks
-                     WorldBorder.Settings settings1 = new WorldBorder.Settings(
+-                    WorldBorder.Settings settings1 = new WorldBorder.Settings(
 -                        settings.centerX() / coordinateScale,
 -                        settings.centerZ() / coordinateScale,
-+                        settings.centerX(),
-+                        settings.centerZ(),
-                         settings.damagePerBlock(),
-                         settings.safeZone(),
-                         settings.warningBlocks(),
+-                        settings.damagePerBlock(),
+-                        settings.safeZone(),
+-                        settings.warningBlocks(),
 -                        settings.warningTime(),
-+                        settings.warningTime() * 20,
-                         settings.size(),
+-                        settings.size(),
 -                        settings.lerpTime(),
-+                        (settings.lerpTime() + 49L) / 50L,
-                         settings.lerpTarget()
-                     );
-+                    // Misteln end - every world saved its own border in its own coordinates; up to 1.21.10 the level.dat border counted seconds and milliseconds, not ticks
-                     WorldBorder worldBorder = new WorldBorder(settings1);
+-                        settings.lerpTarget()
+-                    );
+-                    WorldBorder worldBorder = new WorldBorder(settings1);
++                    WorldBorder worldBorder = new WorldBorder(mistelnBorderToTicks(settings)); // Misteln - DFU: the level.dat border counted seconds and milliseconds
                      worldBorder.applyInitialSettings(serverLevel1.getGameTime());
                      dataStorage1.set(WorldBorder.TYPE, worldBorder);
+                 }
+@@ -804,6 +803,23 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end - rework world loading process
+     }
+ 
++    // Misteln start - every world saved its own border in its own coordinates, so nothing is scaled; up to 1.21.10 the level.dat border counted seconds and milliseconds, not ticks
++    @com.google.common.annotations.VisibleForTesting
++    public static WorldBorder.Settings mistelnBorderToTicks(final WorldBorder.Settings settings) {
++        return new WorldBorder.Settings(
++            settings.centerX(),
++            settings.centerZ(),
++            settings.damagePerBlock(),
++            settings.safeZone(),
++            settings.warningBlocks(),
++            settings.warningTime() * 20,
++            settings.size(),
++            (settings.lerpTime() + 49L) / 50L,
++            settings.lerpTarget()
++        );
++    }
++    // Misteln end - every world saved its own border in its own coordinates, so nothing is scaled
++
+     private static void setInitialSpawn(
+         ServerLevel level, ServerLevelData levelData, boolean generateBonusChest, boolean debug, LevelLoadListener levelLoadListener
+     ) {
 diff --git a/net/minecraft/server/dedicated/DedicatedServerProperties.java b/net/minecraft/server/dedicated/DedicatedServerProperties.java
 index 2a3b10c5e031ef44a2b53bc4fdc6e86c917f75d4..f1765ef2773ca1ecec7a714f486b8615d4a193e2 100644
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
