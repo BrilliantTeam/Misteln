@@ -1,0 +1,221 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 13 Oct 2026 16:15:19 +0800
+Subject: [PATCH] Upgrade renames and formats tests
+
+
+diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4697686ea120d805785edb50ed1e22a10e95ce0
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
+@@ -0,0 +1,209 @@
++package org.bukkit.craftbukkit.inventory;
++
++import static org.junit.jupiter.api.Assertions.*;
++import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
++import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import com.mojang.serialization.Dynamic;
++import com.mojang.serialization.JsonOps;
++import java.io.ByteArrayOutputStream;
++import java.util.Properties;
++import net.minecraft.SharedConstants;
++import net.minecraft.core.component.DataComponents;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.NbtIo;
++import net.minecraft.nbt.TagParser;
++import net.minecraft.server.dedicated.DedicatedServerProperties;
++import net.minecraft.util.datafix.DataFixTypes;
++import net.minecraft.util.datafix.DataFixers;
++import net.minecraft.world.level.block.entity.BlockEntityType;
++import org.bukkit.craftbukkit.util.CraftMagicNumbers;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.support.environment.AllFeatures;
++import org.junit.jupiter.api.Test;
++
++// Misteln - upgrades from 1.21.4 (data version 4189) that vanilla and Paper leave broken: the chain rename inside components,
++// recipe books and advancements, JSON items, and the server.properties values that became game rules
++@AllFeatures
++public class UpgradeRenamesAndFormatsTest {
++
++    private static final int V1_21_4 = 4189;
++    private static final int V26_2 = 4903;
++    private static final int V26_3_SNAPSHOT9 = 5011;
++    private static final int CURRENT = SharedConstants.getCurrentVersion().dataVersion().version();
++
++    private static CompoundTag snbt(String data) throws Exception {
++        return TagParser.parseCompoundFully(data);
++    }
++
++    private static CompoundTag convert(ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType type, String data) throws Exception {
++        return MCDataConverter.convertTag(type, snbt(data), V1_21_4, CURRENT);
++    }
++
++    @Test
++    public void testChainRenamedInsideComponents() throws Exception {
++        CompoundTag components = convert(MCTypeRegistry.ITEM_STACK, "{id:\"minecraft:diamond_pickaxe\",count:1,components:{"
++            + "\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f,correct_for_drops:1b},{blocks:[\"minecraft:stone\",\"minecraft:chain\"],speed:2.0f},{blocks:\"#minecraft:logs\",speed:3.0f}]},"
++            + "\"minecraft:repairable\":{items:\"minecraft:chain\"},"
++            + "\"minecraft:lock\":{items:[\"minecraft:chain\"]},"
++            + "\"minecraft:debug_stick_state\":{\"minecraft:chain\":\"axis\"},"
++            + "\"minecraft:recipes\":[\"minecraft:chain\"]}}").getCompoundOrEmpty("components");
++
++        CompoundTag tool = components.getCompoundOrEmpty("minecraft:tool");
++        assertEquals("minecraft:iron_chain", tool.getListOrEmpty("rules").getCompoundOrEmpty(0).getStringOr("blocks", null));
++        assertEquals("minecraft:iron_chain", tool.getListOrEmpty("rules").getCompoundOrEmpty(1).getListOrEmpty("blocks").getStringOr(1, null));
++        assertEquals("#minecraft:logs", tool.getListOrEmpty("rules").getCompoundOrEmpty(2).getStringOr("blocks", null));
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:repairable").getStringOr("items", null));
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:lock").getListOrEmpty("items").getStringOr(0, null));
++        assertTrue(components.getCompoundOrEmpty("minecraft:debug_stick_state").contains("minecraft:iron_chain"));
++        assertEquals("minecraft:iron_chain", components.getListOrEmpty("minecraft:recipes").getStringOr(0, null));
++    }
++
++    @Test
++    public void testItemRenamesReachComponentsAfterTheV4996WalkerList() throws Exception {
++        CompoundTag components = MCDataConverter.convertTag(MCTypeRegistry.ITEM_STACK, snbt("{id:\"minecraft:stick\",count:1,components:{"
++            + "\"minecraft:repairable\":{items:\"minecraft:ocean_explorer_map\"},"
++            + "\"minecraft:lock\":{items:[\"minecraft:jungle_explorer_map\"]}}}"), V26_3_SNAPSHOT9, CURRENT).getCompoundOrEmpty("components");
++
++        assertEquals("minecraft:ocean_monument_map", components.getCompoundOrEmpty("minecraft:repairable").getStringOr("items", null));
++        assertEquals("minecraft:jungle_pyramid_map", components.getCompoundOrEmpty("minecraft:lock").getListOrEmpty("items").getStringOr(0, null));
++    }
++
++    @Test
++    public void testChainRenamedInContainerLockAndRecipeBook() throws Exception {
++        CompoundTag chest = convert(MCTypeRegistry.TILE_ENTITY, "{id:\"minecraft:chest\",x:0,y:0,z:0,lock:{items:\"minecraft:chain\"},Items:[]}");
++        assertEquals("minecraft:iron_chain", chest.getCompoundOrEmpty("lock").getStringOr("items", null));
++
++        CompoundTag player = convert(MCTypeRegistry.PLAYER, "{recipeBook:{recipes:[\"minecraft:chain\",\"minecraft:stick\"],toBeDisplayed:[\"minecraft:chain\"]}}");
++        assertEquals("minecraft:iron_chain", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("recipes").getStringOr(0, null));
++        assertEquals("minecraft:stick", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("recipes").getStringOr(1, null));
++        assertEquals("minecraft:iron_chain", player.getCompoundOrEmpty("recipeBook").getListOrEmpty("toBeDisplayed").getStringOr(0, null));
++    }
++
++    @Test
++    public void testSignsGetOpFeatureFlagFrom26_2() throws Exception {
++        CompoundTag sign = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY,
++            snbt("{id:\"minecraft:sign\",x:0,y:0,z:0,is_waxed:0b}"), V26_2, CURRENT);
++        assertTrue(sign.getBooleanOr("allow_op_features", false), "signs written before 26.3 keep working with commands");
++
++        CompoundTag hanging = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY,
++            snbt("{id:\"minecraft:hanging_sign\",x:0,y:0,z:0,is_waxed:0b}"), V26_2, CURRENT);
++        assertTrue(hanging.getBooleanOr("allow_op_features", false), "hanging signs too");
++    }
++
++    @Test
++    public void testPluginPlayerDataUsesDataConverter() throws Exception {
++        CompoundTag backpack = DataFixTypes.PLAYER.updateToCurrentVersion(DataFixers.getDataFixer(), snbt("{Inventory:[{Slot:0b,id:\"minecraft:diamond_pickaxe\",count:1,components:{"
++            + "\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f}]},\"minecraft:hide_additional_tooltip\":{},\"minecraft:jukebox_playable\":{song:\"minecraft:cat\"}}}]}"), V1_21_4);
++        CompoundTag components = backpack.getListOrEmpty("Inventory").getCompoundOrEmpty(0).getCompoundOrEmpty("components");
++        assertEquals("minecraft:iron_chain", components.getCompoundOrEmpty("minecraft:tool").getListOrEmpty("rules").getCompoundOrEmpty(0).getStringOr("blocks", null));
++        // the Misteln V4307 change: hide_additional_tooltip hides jukebox_playable too, as ItemFlag.HIDE_ADDITIONAL_TOOLTIP does
++        assertTrue(components.getCompoundOrEmpty("minecraft:tooltip_display").getListOrEmpty("hidden_components").stream()
++            .anyMatch(tag -> "minecraft:jukebox_playable".equals(tag.asString().orElse(null))), components.toString());
++    }
++
++    @Test
++    public void testChainRecipeAdvancementRenamed() {
++        JsonObject progress = JsonParser.parseString("{\"minecraft:recipes/decorations/chain\":{\"criteria\":{\"has_the_recipe\":\"2026-01-01 00:00:00 +0000\"},\"done\":true},\"DataVersion\":4189}").getAsJsonObject();
++        JsonObject upgraded = DataFixTypes.ADVANCEMENTS.update(DataFixers.getDataFixer(), new Dynamic<>(JsonOps.INSTANCE, progress), V1_21_4, CURRENT).getValue().getAsJsonObject();
++        assertTrue(upgraded.has("minecraft:recipes/decorations/iron_chain"), upgraded.toString());
++        assertFalse(upgraded.has("minecraft:recipes/decorations/chain"), upgraded.toString());
++    }
++
++    private static void assertJsonMatchesNbt(String json, String nbt) throws Exception {
++        assertJsonMatchesNbt(json, nbt, V1_21_4);
++    }
++
++    private static void assertJsonMatchesNbt(String json, String nbt, int version) throws Exception {
++        CompoundTag tag = snbt(nbt);
++        tag.putInt("DataVersion", version);
++        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
++        NbtIo.writeCompressed(tag, bytes);
++        ItemStack fromBytes = ItemStack.deserializeBytes(bytes.toByteArray());
++        ItemStack fromJson = CraftMagicNumbers.INSTANCE.deserializeItemFromJson(JsonParser.parseString(json).getAsJsonObject());
++        assertTrue(net.minecraft.world.item.ItemStack.matches(CraftItemStack.unwrap(fromBytes), CraftItemStack.unwrap(fromJson)), "json " + CraftItemStack.unwrap(fromJson).getComponentsPatch() + " bytes " + CraftItemStack.unwrap(fromBytes).getComponentsPatch());
++    }
++
++    @Test
++    public void testJsonItemsUpgradeLikeBytes() throws Exception {
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:diamond_pickaxe\",\"count\":1,\"components\":{\"minecraft:tool\":{\"rules\":[{\"blocks\":\"minecraft:chain\",\"speed\":12.0,\"correct_for_drops\":true}],\"default_mining_speed\":2.5,\"damage_per_block\":3}},\"DataVersion\":4189}",
++            "{id:\"minecraft:diamond_pickaxe\",count:1,components:{\"minecraft:tool\":{rules:[{blocks:\"minecraft:chain\",speed:12.0f,correct_for_drops:1b}],default_mining_speed:2.5f,damage_per_block:3}}}");
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:diamond_sword\",\"count\":1,\"components\":{\"minecraft:enchantments\":{\"levels\":{\"minecraft:sharpness\":5},\"show_in_tooltip\":false},\"minecraft:hide_additional_tooltip\":{},\"minecraft:custom_data\":\"{PublicBukkitValues:{\\\"p:i\\\":42,\\\"p:l\\\":5L,\\\"p:b\\\":[B;1B,2B]}}\"},\"DataVersion\":4189}",
++            "{id:\"minecraft:diamond_sword\",count:1,components:{\"minecraft:enchantments\":{levels:{\"minecraft:sharpness\":5},show_in_tooltip:0b},\"minecraft:hide_additional_tooltip\":{},\"minecraft:custom_data\":{PublicBukkitValues:{\"p:i\":42,\"p:l\":5L,\"p:b\":[B;1B,2B]}}}}");
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:beehive\",\"count\":1,\"components\":{\"minecraft:bees\":[{\"entity_data\":\"{id:\\\"minecraft:bee\\\",CustomName:'\\\"bee\\\"'}\",\"ticks_in_hive\":3,\"min_ticks_in_hive\":600}]},\"DataVersion\":4189}",
++            "{id:\"minecraft:beehive\",count:1,components:{\"minecraft:bees\":[{entity_data:{id:\"minecraft:bee\",CustomName:'\"bee\"'},ticks_in_hive:3,min_ticks_in_hive:600}]}}");
++        // the sherd list of 26.2 becomes one item stack per side in 26.3
++        assertJsonMatchesNbt(
++            "{\"id\":\"minecraft:decorated_pot\",\"count\":1,\"components\":{\"minecraft:pot_decorations\":[\"minecraft:angler_pottery_sherd\",\"minecraft:brick\",\"minecraft:blade_pottery_sherd\",\"minecraft:burn_pottery_sherd\"]},\"DataVersion\":4903}",
++            "{id:\"minecraft:decorated_pot\",count:1,components:{\"minecraft:pot_decorations\":[\"minecraft:angler_pottery_sherd\",\"minecraft:brick\",\"minecraft:blade_pottery_sherd\",\"minecraft:burn_pottery_sherd\"]}}",
++            V26_2);
++    }
++
++    @Test
++    public void testJsonSignItemTextIsConverted() {
++        ItemStack sign = CraftMagicNumbers.INSTANCE.deserializeItemFromJson(JsonParser.parseString(
++            "{\"id\":\"minecraft:oak_sign\",\"count\":1,\"components\":{\"minecraft:block_entity_data\":\"{back_text:{color:\\\"black\\\",has_glowing_text:0b,messages:['\\\"\\\"','\\\"back\\\"','\\\"\\\"','\\\"\\\"']},front_text:{color:\\\"black\\\",has_glowing_text:0b,messages:['{\\\"color\\\":\\\"red\\\",\\\"text\\\":\\\"sign item\\\"}','\\\"\\\"','\\\"\\\"','\\\"\\\"']},id:\\\"minecraft:sign\\\",is_waxed:1b}\"},\"DataVersion\":4189}"
++        ).getAsJsonObject());
++        var data = CraftItemStack.unwrap(sign).get(DataComponents.BLOCK_ENTITY_DATA);
++        assertNotNull(data);
++        assertEquals(net.minecraft.world.level.block.entity.BlockEntityTypes.SIGN, data.type());
++        CompoundTag front = data.copyTagWithoutId().getCompoundOrEmpty("front_text");
++        assertEquals("sign item", front.getListOrEmpty("messages").getCompoundOrEmpty(0).getStringOr("text", null), front.toString());
++    }
++
++    @Test
++    public void testChainRenamedInBukkitMeta() {
++        ItemStack pickaxe = ItemMetaDataUpgradeTest.load(V1_21_4, "DIAMOND_PICKAXE", ""
++            + "    meta-type: UNSPECIFIC\n"
++            + "    tool:\n"
++            + "      ==: Tool\n"
++            + "      default-mining-speed: 2.5\n"
++            + "      damage-per-block: 3\n"
++            + "      rules:\n"
++            + "      - ==: ToolRule\n"
++            + "        blocks:\n"
++            + "        - minecraft:chain\n"
++            + "        speed: 12.0\n"
++            + "        correct-for-drops: true\n");
++        var rules = pickaxe.getItemMeta().getTool().getRules();
++        assertEquals(1, rules.size());
++        assertEquals(java.util.List.of(org.bukkit.Material.IRON_CHAIN), java.util.List.copyOf(rules.get(0).getBlocks()));
++
++        ItemStack book = ItemMetaDataUpgradeTest.load(V1_21_4, "KNOWLEDGE_BOOK", ""
++            + "    meta-type: KNOWLEDGE_BOOK\n"
++            + "    Recipes:\n"
++            + "    - minecraft:chain\n"
++            + "    - minecraft:stick\n");
++        assertEquals(java.util.List.of(org.bukkit.NamespacedKey.minecraft("iron_chain"), org.bukkit.NamespacedKey.minecraft("stick")),
++            ((org.bukkit.inventory.meta.KnowledgeBookMeta) book.getItemMeta()).getRecipes());
++    }
++
++    @Test
++    public void testRemovedServerPropertiesAreRemembered() {
++        Boolean pvp = DedicatedServerProperties.mistelnLegacyPvp;
++        Boolean spawnMonsters = DedicatedServerProperties.mistelnLegacySpawnMonsters;
++        Boolean commandBlocks = DedicatedServerProperties.mistelnLegacyEnableCommandBlock;
++        try {
++            Properties properties = new Properties();
++            properties.setProperty("pvp", "false");
++            properties.setProperty("spawn-monsters", "false");
++            properties.setProperty("enable-command-block", "false");
++            DedicatedServerProperties first = new DedicatedServerProperties(properties, null);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyPvp);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacySpawnMonsters);
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyEnableCommandBlock);
++            assertFalse(first.properties.containsKey("pvp"), "a removed property must not be written back");
++
++            new DedicatedServerProperties(first.properties, null); // a reload no longer has them
++            assertEquals(Boolean.FALSE, DedicatedServerProperties.mistelnLegacyPvp);
++        } finally {
++            DedicatedServerProperties.mistelnLegacyPvp = pvp;
++            DedicatedServerProperties.mistelnLegacySpawnMonsters = spawnMonsters;
++            DedicatedServerProperties.mistelnLegacyEnableCommandBlock = commandBlocks;
++        }
++    }
++}

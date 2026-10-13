@@ -5,7 +5,7 @@ Subject: [PATCH] Keep world borders and removed server properties when
 
 
 diff --git a/net/minecraft/server/dedicated/DedicatedServerProperties.java b/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 425d071c5cb51c596748093b16bb2ac8386e10dd..7f9294b8d55d8aa424385c994df26766bf2876cf 100644
+index f743902c9c2e040b58f6b071ccc853880248e9a2..dd2ff4842ccc32064409adbd53b6b2921c68f49f 100644
 --- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -81,6 +81,20 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
@@ -30,10 +30,10 @@ index 425d071c5cb51c596748093b16bb2ac8386e10dd..7f9294b8d55d8aa424385c994df26766
      public final int queryPort = this.get("query.port", 25565);
      public final boolean enableRcon = this.get("enable-rcon", false);
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 32548bd7967a93436c148ab4284b01bdced05fed..53570ad681548330999e2188c8940b170d98cd5e 100644
+index 8522ad216851157a2f5dd292ab0534a9b5ba0a7a..d7fc60e1e4773283d4921d286a5f1ecbc26f6e6b 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -633,7 +633,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -635,7 +635,19 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          savedDataStorage.set(io.papermc.paper.world.saveddata.PaperLevelOverrides.TYPE, levelData);
          savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldMetadata.TYPE, new io.papermc.paper.world.saveddata.PaperWorldMetadata(loadedWorldData.uuid()));
          savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());

@@ -5,7 +5,7 @@ Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.1 to 1.21.4
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
-index 70e21e1fc337c6ea40e64020fa1832d1630cae97..968d80a4b164281e7b66bb04c820e31ff1cd7c1a 100644
+index 01271bd7484f75664ac14bc10ad7abc78fa88b8c..ca62144e7e21a4e4bc8e6eccb59a1826012e6b57 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemFactory.java
 @@ -48,6 +48,7 @@ public final class CraftItemFactory implements ItemFactory {
@@ -80,10 +80,10 @@ index 197885a1231d0548fae6967812a232c0e9f279a8..1293e1401e900b6e5893da91624486c4
      // Misteln end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b912b7f6c 100644
+index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67400e2b9f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -356,6 +356,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -357,6 +357,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
  
      private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -95,7 +95,7 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
  
      CraftMetaItem(CraftMetaItem meta) {
          if (meta == null) {
-@@ -695,6 +700,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -697,6 +702,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  this.damageResistantTypes = damageResistantTypes;
              }
          }
@@ -107,7 +107,7 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
  
          Integer maxStackSize = SerializableMeta.getObject(Integer.class, map, CraftMetaItem.MAX_STACK_SIZE.BUKKIT, true);
          if (maxStackSize != null) {
-@@ -719,6 +729,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -721,6 +731,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          CraftFoodComponent food = SerializableMeta.getObject(CraftFoodComponent.class, map, CraftMetaItem.FOOD.BUKKIT, true);
          if (food != null) {
              this.setFood(food);
@@ -122,7 +122,7 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
          }
  
          CraftToolComponent tool = SerializableMeta.getObject(CraftToolComponent.class, map, CraftMetaItem.TOOL.BUKKIT, true);
-@@ -762,25 +780,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -764,25 +782,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
              ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(unhandled));
              try {
                  CompoundTag unhandledTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
@@ -136,9 +136,9 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
 -                });
 -                this.unhandledTags.copy(unhandledPatch.forget(type -> type == CraftMetaItem.CAN_PLACE_ON.TYPE || type == CraftMetaItem.CAN_BREAK.TYPE));
 -
--                for (Entry<DataComponentType<?>, Optional<?>> entry : unhandledPatch.entrySet()) {
+-                for (Entry<DataComponentType<?>, Object> entry : unhandledPatch.map.entrySet()) {
 -                    // Move removed unhandled tags to dedicated removedTags
--                    if (entry.getValue().isEmpty()) {
+-                    if (Removed.isRemoved(entry.getValue())) {
 -                        DataComponentType<?> key = entry.getKey();
 -
 -                        this.unhandledTags.clear(key);
@@ -153,7 +153,7 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
              } catch (IOException ex) {
                  LOGGER.error("Failed to read unhandled tag for item", ex);
              }
-@@ -817,6 +821,28 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -819,6 +823,28 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
      }
  
@@ -167,9 +167,9 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
 +        });
 +        this.unhandledTags.copy(unhandledPatch.forget(type -> type == CraftMetaItem.CAN_PLACE_ON.TYPE || type == CraftMetaItem.CAN_BREAK.TYPE));
 +
-+        for (Entry<DataComponentType<?>, Optional<?>> entry : unhandledPatch.entrySet()) {
++        for (Entry<DataComponentType<?>, Object> entry : unhandledPatch.map.entrySet()) {
 +            // Move removed unhandled tags to dedicated removedTags
-+            if (entry.getValue().isEmpty()) {
++            if (Removed.isRemoved(entry.getValue())) {
 +                DataComponentType<?> key = entry.getKey();
 +
 +                this.unhandledTags.clear(key);
@@ -182,7 +182,7 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
      void deserializeInternal(CompoundTag tag, Object context) {
          // SPIGOT-4576: Need to migrate from internal to proper data
          if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
-@@ -2451,6 +2477,39 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2454,6 +2480,39 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      @Override
      public void setVersion(int version) {
          this.version = version;
@@ -200,9 +200,9 @@ index 6dea2bc7b73045aa76140c48b975f8f5550148a2..f12b85324c8221c91c33a030f5b2a29b
 +                final DataComponentPatch upgradedPatch = DataComponentPatch.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), upgradedTag).resultOrPartial(e -> upgradeError[0] = e).orElse(DataComponentPatch.EMPTY);
 +                error = upgradeError[0];
 +                // revert what the components were applied as before the upgrade
-+                for (Entry<DataComponentType<?>, Optional<?>> entry : legacyPatch.entrySet()) {
++                for (Entry<DataComponentType<?>, Object> entry : legacyPatch.map.entrySet()) {
 +                    this.unhandledTags.clear(entry.getKey());
-+                    if (entry.getValue().isEmpty()) {
++                    if (Removed.isRemoved(entry.getValue())) {
 +                        this.removedTags.remove(entry.getKey());
 +                    }
 +                }
@@ -337,258 +337,3 @@ index 421384d133632a4bcc4526a291effe5d2b8ec74f..370d4d07ea42f4d06b8c75ced4488ef7
  
      @Override
      public Map<String, Object> serialize() {
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..23317cdb56f3c0933513417c08de8d044348d7ea
---- /dev/null
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-@@ -0,0 +1,249 @@
-+package org.bukkit.craftbukkit.inventory;
-+
-+import static org.junit.jupiter.api.Assertions.*;
-+import java.io.ByteArrayOutputStream;
-+import java.io.IOException;
-+import java.io.StringReader;
-+import java.util.Base64;
-+import net.minecraft.core.component.DataComponents;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.ListTag;
-+import net.minecraft.nbt.NbtIo;
-+import net.minecraft.nbt.NbtOps;
-+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-+import net.minecraft.world.entity.ai.attributes.AttributeMap;
-+import net.minecraft.world.entity.ai.attributes.Attributes;
-+import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
-+import net.minecraft.world.item.component.Consumable;
-+import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
-+import org.bukkit.Material;
-+import org.bukkit.attribute.Attribute;
-+import org.bukkit.block.Furnace;
-+import org.bukkit.configuration.file.YamlConfiguration;
-+import org.bukkit.inventory.ItemStack;
-+import org.bukkit.inventory.meta.BlockStateMeta;
-+import org.bukkit.inventory.meta.ItemMeta;
-+import org.bukkit.support.environment.AllFeatures;
-+import org.bukkit.tag.DamageTypeTags;
-+import org.junit.jupiter.api.Test;
-+
-+// Misteln - DFU: items serialized by 1.21.1 (data version 3955) must still load
-+@AllFeatures
-+public class ItemMetaDataUpgradeTest {
-+
-+    private static final int V1_21_1 = 3955;
-+
-+    static String base64(CompoundTag tag) throws IOException {
-+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-+        NbtIo.writeCompressed(tag, buf);
-+        return Base64.getEncoder().encodeToString(buf.toByteArray());
-+    }
-+
-+    static ItemStack load(int version, String type, String meta) {
-+        String yaml = "item:\n"
-+            + "  ==: org.bukkit.inventory.ItemStack\n"
-+            + "  v: " + version + "\n"
-+            + "  type: " + type + "\n"
-+            + "  meta:\n"
-+            + "    ==: ItemMeta\n"
-+            + meta;
-+        ItemStack stack = YamlConfiguration.loadConfiguration(new StringReader(yaml)).getItemStack("item");
-+        assertNotNull(stack, yaml);
-+        return stack;
-+    }
-+
-+    @Test
-+    public void testItemMeta() throws IOException {
-+        CompoundTag nested = new CompoundTag();
-+        nested.putString("id", "minecraft:stone");
-+        nested.putInt("count", 1);
-+        CompoundTag nestedComponents = new CompoundTag();
-+        nestedComponents.put("minecraft:fire_resistant", new CompoundTag());
-+        nested.put("components", nestedComponents);
-+        CompoundTag slot = new CompoundTag();
-+        slot.putInt("slot", 0);
-+        slot.put("item", nested);
-+        ListTag container = new ListTag();
-+        container.add(slot);
-+        CompoundTag unhandled = new CompoundTag();
-+        unhandled.putString("minecraft:lock", "secret");
-+        unhandled.put("minecraft:container", container);
-+
-+        ItemStack stack = load(V1_21_1, "APPLE", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    fire-resistant: true\n"
-+            + "    food:\n"
-+            + "      ==: Food\n"
-+            + "      nutrition: 4\n"
-+            + "      saturation: 2.4\n"
-+            + "      can-always-eat: true\n"
-+            + "      eat-seconds: 3.2\n"
-+            + "      using-converts-to:\n"
-+            + "        ==: org.bukkit.inventory.ItemStack\n"
-+            + "        v: " + V1_21_1 + "\n"
-+            + "        type: BOWL\n"
-+            + "      effects:\n"
-+            + "      - ==: FoodEffect\n"
-+            + "        effect:\n"
-+            + "          ==: PotionEffect\n"
-+            + "          effect: minecraft:speed\n"
-+            + "          duration: 200\n"
-+            + "          amplifier: 1\n"
-+            + "          ambient: false\n"
-+            + "          has-particles: true\n"
-+            + "          has-icon: true\n"
-+            + "        probability: 0.5\n"
-+            + "    unhandled: " + base64(unhandled) + "\n");
-+
-+        ItemMeta meta = stack.getItemMeta();
-+        assertEquals(DamageTypeTags.IS_FIRE, meta.getDamageResistant());
-+        assertEquals(4, meta.getFood().getNutrition());
-+        assertEquals(Material.BOWL, meta.getUseRemainder().getType());
-+
-+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        Consumable consumable = nms.get(DataComponents.CONSUMABLE); // an apple eats in 1.6 seconds by default
-+        assertEquals(3.2F, consumable.consumeSeconds(), 1.0E-4F);
-+        assertEquals(1, consumable.onConsumeEffects().size());
-+        ApplyStatusEffectsConsumeEffect effect = (ApplyStatusEffectsConsumeEffect) consumable.onConsumeEffects().getFirst();
-+        assertEquals(0.5F, effect.probability(), 1.0E-4F);
-+        assertEquals(1, effect.effects().getFirst().getAmplifier());
-+
-+        assertNotNull(nms.get(DataComponents.LOCK), "lock string -> predicate");
-+        assertTrue(nms.get(DataComponents.CONTAINER).copyOne().has(DataComponents.DAMAGE_RESISTANT), "nested fire_resistant -> damage_resistant");
-+    }
-+
-+    @Test
-+    public void testLegacyAttributeNames() {
-+        assertNotNull(org.bukkit.craftbukkit.attribute.CraftAttribute.stringToBukkit("GENERIC_MAX_HEALTH"), "pre 1.21.2 enum name");
-+        assertNotNull(org.bukkit.craftbukkit.attribute.CraftAttribute.stringToBukkit("minecraft:generic.armor"), "pre 1.21.2 key");
-+
-+        ItemStack stack = load(V1_21_1, "STICK", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    attribute-modifiers:\n"
-+            + "      GENERIC_MAX_HEALTH:\n"
-+            + "      - ==: org.bukkit.attribute.AttributeModifier\n"
-+            + "        key: minecraft:legacy_enum\n"
-+            + "        operation: 0\n"
-+            + "        amount: 2.0\n"
-+            + "      'minecraft:generic.armor':\n"
-+            + "      - ==: org.bukkit.attribute.AttributeModifier\n"
-+            + "        key: minecraft:legacy_key\n"
-+            + "        operation: 0\n"
-+            + "        amount: 3.0\n");
-+
-+        ItemMeta meta = stack.getItemMeta();
-+        assertTrue(meta.hasAttributeModifiers(), String.valueOf(meta));
-+        assertEquals(1, meta.getAttributeModifiers(Attribute.MAX_HEALTH).size());
-+        assertEquals(1, meta.getAttributeModifiers(Attribute.ARMOR).size());
-+    }
-+
-+    @Test
-+    public void testBlockStateComponents() throws IOException {
-+        CompoundTag modifier = new CompoundTag();
-+        modifier.putString("type", "minecraft:generic.attack_damage");
-+        modifier.putString("id", "minecraft:test");
-+        modifier.putDouble("amount", 5.0);
-+        modifier.putString("operation", "add_value");
-+        modifier.putString("slot", "mainhand");
-+        ListTag modifiers = new ListTag();
-+        modifiers.add(modifier);
-+        CompoundTag attributeModifiers = new CompoundTag();
-+        attributeModifiers.put("modifiers", modifiers);
-+        CompoundTag swordComponents = new CompoundTag();
-+        swordComponents.put("minecraft:attribute_modifiers", attributeModifiers);
-+        CompoundTag sword = new CompoundTag();
-+        sword.putString("id", "minecraft:diamond_sword");
-+        sword.putInt("count", 1);
-+        sword.put("components", swordComponents);
-+        CompoundTag slot = new CompoundTag();
-+        slot.putInt("slot", 0);
-+        slot.put("item", sword);
-+        ListTag container = new ListTag();
-+        container.add(slot);
-+        CompoundTag components = new CompoundTag();
-+        components.put("minecraft:container", container);
-+        CompoundTag internal = new CompoundTag();
-+        internal.put("block-entity-components", components);
-+
-+        ItemStack stack = load(V1_21_1, "SHULKER_BOX", ""
-+            + "    meta-type: TILE_ENTITY\n"
-+            + "    blockMaterial: SHULKER_BOX\n"
-+            + "    internal: " + base64(internal) + "\n");
-+
-+        net.minecraft.world.item.ItemStack inner = CraftItemStack.asNMSCopy(stack).get(DataComponents.CONTAINER).copyOne();
-+        assertEquals("minecraft:attack_damage", inner.get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().getFirst().attribute().unwrapKey().orElseThrow().identifier().toString());
-+    }
-+
-+    @Test
-+    public void testBlockEntityTag() throws IOException {
-+        CompoundTag blockEntity = new CompoundTag();
-+        blockEntity.putShort("CookTime", (short) 5);
-+        blockEntity.putShort("CookTimeTotal", (short) 200);
-+        blockEntity.putShort("BurnTime", (short) 0);
-+        CompoundTag internal = new CompoundTag();
-+        internal.put("block-entity-tag", blockEntity);
-+
-+        ItemStack stack = load(V1_21_1, "FURNACE", ""
-+            + "    meta-type: TILE_ENTITY\n"
-+            + "    blockMaterial: FURNACE\n"
-+            + "    internal: " + base64(internal) + "\n");
-+
-+        assertEquals(5, ((Furnace) ((BlockStateMeta) stack.getItemMeta()).getBlockState()).getCookTime());
-+    }
-+
-+    @Test
-+    public void testEntityTag() throws IOException {
-+        CompoundTag attribute = new CompoundTag();
-+        attribute.putString("id", "minecraft:generic.max_health");
-+        attribute.putDouble("base", 40.0);
-+        ListTag attributes = new ListTag();
-+        attributes.add(attribute);
-+        CompoundTag entity = new CompoundTag();
-+        entity.putString("id", "minecraft:zombie");
-+        entity.put("attributes", attributes);
-+        CompoundTag internal = new CompoundTag();
-+        internal.put("entity-tag", entity);
-+
-+        ItemStack stack = load(V1_21_1, "ZOMBIE_SPAWN_EGG", ""
-+            + "    meta-type: SPAWN_EGG\n"
-+            + "    internal: " + base64(internal) + "\n");
-+
-+        CompoundTag upgraded = CraftItemStack.asNMSCopy(stack).get(DataComponents.ENTITY_DATA).copyTagWithoutId();
-+        assertEquals("minecraft:max_health", upgraded.getListOrEmpty("attributes").getCompoundOrEmpty(0).getString("id").orElseThrow());
-+    }
-+
-+    @Test
-+    public void testCurrentVersionUntouched() {
-+        ItemStack stack = new ItemStack(Material.STICK);
-+        ItemMeta meta = stack.getItemMeta();
-+        meta.setFood(meta.getFood());
-+        meta.setDamageResistant(DamageTypeTags.IS_EXPLOSION);
-+        stack.setItemMeta(meta);
-+
-+        YamlConfiguration config = new YamlConfiguration();
-+        config.set("item", stack);
-+        ItemStack loaded = YamlConfiguration.loadConfiguration(new StringReader(config.saveToString())).getItemStack("item");
-+
-+        assertEquals(stack, loaded);
-+        assertFalse(CraftItemStack.asNMSCopy(loaded).has(DataComponents.CONSUMABLE), "current food must not gain a consumable");
-+    }
-+
-+    @Test
-+    public void testEntityAttributeIds() {
-+        CompoundTag renamed = new CompoundTag();
-+        renamed.putString("id", "minecraft:generic.max_health");
-+        renamed.putDouble("base", 40.0);
-+        CompoundTag legacy = new CompoundTag();
-+        legacy.putString("Name", "generic.movement_speed");
-+        legacy.putDouble("Base", 0.5);
-+        ListTag list = new ListTag();
-+        list.add(renamed);
-+        list.add(legacy);
-+
-+        AttributeMap map = new AttributeMap(DefaultAttributes.getSupplier(net.minecraft.world.entity.EntityTypes.ZOMBIE));
-+        map.apply(AttributeInstance.Packed.LIST_CODEC.parse(NbtOps.INSTANCE, list).getOrThrow());
-+
-+        assertEquals(40.0, map.getBaseValue(Attributes.MAX_HEALTH));
-+        assertEquals(0.5, map.getBaseValue(Attributes.MOVEMENT_SPEED));
-+    }
-+}

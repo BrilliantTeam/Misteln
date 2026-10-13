@@ -1,6 +1,6 @@
 --- a/purpur-api/build.gradle.kts
 +++ b/purpur-api/build.gradle.kts
-@@ -108,8 +_,6 @@
+@@ -106,8 +_,6 @@
      mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
      testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
  
@@ -9,7 +9,7 @@
  }
  
  val generatedDir: java.nio.file.Path = rootProject.layout.projectDirectory.dir("paper-api/src/generated/java").asFile.toPath() // Purpur
-@@ -123,17 +_,21 @@
+@@ -121,17 +_,21 @@
          java {
              srcDir(generatedDir)
              srcDir(file("../paper-api/src/main/java"))

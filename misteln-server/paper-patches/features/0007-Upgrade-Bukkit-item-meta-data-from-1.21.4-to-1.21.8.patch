@@ -89,10 +89,10 @@ index 49ec2d9213d424f2f1f0ec8bf7b39720cb800612..cc5acbb5f5c32c0564cfd972b3f93d01
      }
      // Misteln end
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500036951d2 100644
+index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e6125d976 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -361,6 +361,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -362,6 +362,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      private DataComponentPatch legacyUnhandledPatch;
      private String legacyUnhandledError;
      // Misteln end
@@ -104,7 +104,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
  
      CraftMetaItem(CraftMetaItem meta) {
          if (meta == null) {
-@@ -611,10 +616,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -613,10 +618,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      CraftMetaItem(Map<String, Object> map) {
          this.displayName = CraftChatMessage.fromJSONOrString(SerializableMeta.getString(map, CraftMetaItem.CUSTOM_NAME.BUKKIT, true), true, false);
          this.itemName = CraftChatMessage.fromJSONOrNull(SerializableMeta.getString(map, CraftMetaItem.ITEM_NAME.BUKKIT, true));
@@ -120,7 +120,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
          }
  
          Object customModelData = SerializableMeta.getObject(Object.class, map, CraftMetaItem.CUSTOM_MODEL_DATA.BUKKIT, true);
-@@ -668,6 +678,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -670,6 +680,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
              }
          }
  
@@ -133,7 +133,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
          String tooltipStyle = SerializableMeta.getString(map, CraftMetaItem.TOOLTIP_STYLE.BUKKIT, true);
          if (tooltipStyle != null) {
              this.setTooltipStyle(NamespacedKey.fromString(tooltipStyle));
-@@ -702,7 +718,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -704,7 +720,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
          // Misteln start - DFU: fire-resistant was replaced by damage-resistant #minecraft:is_fire in 1.21.2 (see V4064)
          if (!this.hasDamageResistant() && SerializableMeta.getBoolean(map, "fire-resistant")) {
@@ -142,7 +142,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
          }
          // Misteln end
  
-@@ -752,6 +768,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -754,6 +770,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          CraftJukeboxComponent jukeboxPlayable = SerializableMeta.getObject(CraftJukeboxComponent.class, map, CraftMetaItem.JUKEBOX_PLAYABLE.BUKKIT, true);
          if (jukeboxPlayable != null) {
              this.setJukeboxPlayable(jukeboxPlayable);
@@ -154,7 +154,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
          }
  
          Integer damage = SerializableMeta.getObject(Integer.class, map, CraftMetaItem.DAMAGE.BUKKIT, true);
-@@ -821,6 +842,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -823,6 +844,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
      }
  
@@ -170,7 +170,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
      // Misteln start - DFU: moved out of the map constructor so upgraded components can be applied again
      private void applyUnhandled(DataComponentPatch unhandledPatch) {
          CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
-@@ -2477,6 +2507,31 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2480,6 +2510,31 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      @Override
      public void setVersion(int version) {
          this.version = version;
@@ -202,7 +202,7 @@ index f12b85324c8221c91c33a030f5b2a29b912b7f6c..46f81442976be070007129897fa56500
          // Misteln start - DFU: upgrade the unhandled components if they were written by an older version
          final CompoundTag legacyTag = this.legacyUnhandledTag;
          final DataComponentPatch legacyPatch = this.legacyUnhandledPatch;
-@@ -2503,7 +2558,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2506,7 +2561,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  if (CraftMetaItem.getOrEmpty(legacyPatch, CraftMetaItem.CAN_BREAK).isPresent()) {
                      this.canBreakPredicates = null;
                  }
@@ -292,269 +292,3 @@ index adf8660bf457be400eb6769e6e7240237e216299..226a30a7f31a180919d77421a76ebee0
          final net.minecraft.core.Registry<net.minecraft.world.item.JukeboxSong> registry = CraftRegistry.getMinecraftRegistry(Registries.JUKEBOX_SONG);
          final Holder.Reference<net.minecraft.world.item.JukeboxSong> holder = registry.get(Identifier.parse(song)).orElseThrow();
          this.handle = new JukeboxPlayable(holder);
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-index 23317cdb56f3c0933513417c08de8d044348d7ea..e8fe8955fe140cfdda3b95e2351e8208b7fd6c25 100644
---- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-@@ -27,11 +27,12 @@ import org.bukkit.support.environment.AllFeatures;
- import org.bukkit.tag.DamageTypeTags;
- import org.junit.jupiter.api.Test;
- 
--// Misteln - DFU: items serialized by 1.21.1 (data version 3955) must still load
-+// Misteln - DFU: items serialized by 1.21.1 (data version 3955) and 1.21.4 (4189) must still load
- @AllFeatures
- public class ItemMetaDataUpgradeTest {
- 
-     private static final int V1_21_1 = 3955;
-+    private static final int V1_21_4 = 4189;
- 
-     static String base64(CompoundTag tag) throws IOException {
-         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-@@ -40,6 +41,7 @@ public class ItemMetaDataUpgradeTest {
-     }
- 
-     static ItemStack load(int version, String type, String meta) {
-+        CraftItemFactory.instance(); // registers the ItemMeta serialization alias, like CraftServer does on startup
-         String yaml = "item:\n"
-             + "  ==: org.bukkit.inventory.ItemStack\n"
-             + "  v: " + version + "\n"
-@@ -96,11 +98,11 @@ public class ItemMetaDataUpgradeTest {
-             + "    unhandled: " + base64(unhandled) + "\n");
- 
-         ItemMeta meta = stack.getItemMeta();
--        assertEquals(DamageTypeTags.IS_FIRE, meta.getDamageResistant());
-         assertEquals(4, meta.getFood().getNutrition());
-         assertEquals(Material.BOWL, meta.getUseRemainder().getType());
- 
-         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        assertEquals(net.minecraft.tags.DamageTypeTags.IS_FIRE, nms.get(DataComponents.DAMAGE_RESISTANT).types().unwrapKey().orElse(null));
-         Consumable consumable = nms.get(DataComponents.CONSUMABLE); // an apple eats in 1.6 seconds by default
-         assertEquals(3.2F, consumable.consumeSeconds(), 1.0E-4F);
-         assertEquals(1, consumable.onConsumeEffects().size());
-@@ -246,4 +248,226 @@ public class ItemMetaDataUpgradeTest {
-         assertEquals(40.0, map.getBaseValue(Attributes.MAX_HEALTH));
-         assertEquals(0.5, map.getBaseValue(Attributes.MOVEMENT_SPEED));
-     }
-+
-+    @Test
-+    public void testLegacyJsonText() {
-+        ItemStack stack = load(V1_21_4, "STICK", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    display-name: '{\"text\":\"shop\",\"bold\":\"true\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://example.com\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":\"hi\"}}'\n"
-+            + "    lore:\n"
-+            + "    - '{\"text\":\"run\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/spawn\"}}'\n"
-+            + "    - plain line\n"
-+            + "    hide-tool-tip: true\n");
-+
-+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        net.minecraft.network.chat.Component name = nms.get(DataComponents.CUSTOM_NAME);
-+        assertEquals("shop", name.getString());
-+        assertTrue(name.getStyle().isBold(), "string boolean -> boolean");
-+        assertInstanceOf(net.minecraft.network.chat.ClickEvent.OpenUrl.class, name.getStyle().getClickEvent());
-+        assertInstanceOf(net.minecraft.network.chat.HoverEvent.ShowText.class, name.getStyle().getHoverEvent());
-+
-+        java.util.List<net.minecraft.network.chat.Component> lore = nms.get(DataComponents.LORE).lines();
-+        assertEquals("/spawn", ((net.minecraft.network.chat.ClickEvent.RunCommand) lore.get(0).getStyle().getClickEvent()).command());
-+        assertEquals("plain line", lore.get(1).getString());
-+
-+        assertTrue(stack.getItemMeta().isHideTooltip(), "hide-tool-tip -> tooltip display");
-+    }
-+
-+    @Test
-+    public void testLegacyBookPages() {
-+        ItemStack book = load(V1_21_4, "WRITTEN_BOOK", ""
-+            + "    meta-type: BOOK_SIGNED\n"
-+            + "    title: t\n"
-+            + "    author: a\n"
-+            + "    pages:\n"
-+            + "    - '{\"text\":\"next\",\"clickEvent\":{\"action\":\"change_page\",\"value\":\"2\"}}'\n");
-+
-+        net.minecraft.network.chat.Component page = CraftItemStack.asNMSCopy(book).get(DataComponents.WRITTEN_BOOK_CONTENT).pages().getFirst().raw();
-+        assertEquals(2, ((net.minecraft.network.chat.ClickEvent.ChangePage) page.getStyle().getClickEvent()).page());
-+    }
-+
-+    @Test
-+    public void testLegacyTooltipComponents() throws IOException {
-+        ItemStack disc = load(V1_21_4, "MUSIC_DISC_CAT", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    jukebox-playable:\n"
-+            + "      ==: JukeboxPlayable\n"
-+            + "      song: minecraft:cat\n"
-+            + "      show-in-tooltip: false\n");
-+        assertTrue(CraftItemStack.asNMSCopy(disc).get(DataComponents.TOOLTIP_DISPLAY).hiddenComponents().contains(DataComponents.JUKEBOX_PLAYABLE));
-+
-+        CompoundTag nested = new CompoundTag();
-+        nested.putString("id", "minecraft:stone");
-+        nested.putInt("count", 1);
-+        CompoundTag nestedComponents = new CompoundTag();
-+        nestedComponents.putString("minecraft:custom_name", "{\"text\":\"inner\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://example.com\"}}");
-+        CompoundTag unbreakable = new CompoundTag();
-+        unbreakable.putBoolean("show_in_tooltip", false);
-+        nestedComponents.put("minecraft:unbreakable", unbreakable);
-+        nested.put("components", nestedComponents);
-+        CompoundTag slot = new CompoundTag();
-+        slot.putInt("slot", 0);
-+        slot.put("item", nested);
-+        ListTag container = new ListTag();
-+        container.add(slot);
-+        CompoundTag unhandled = new CompoundTag();
-+        unhandled.put("minecraft:container", container);
-+
-+        ItemStack stack = load(V1_21_4, "STICK", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    unhandled: " + base64(unhandled) + "\n");
-+
-+        net.minecraft.world.item.ItemStack inner = CraftItemStack.asNMSCopy(stack).get(DataComponents.CONTAINER).copyOne();
-+        assertInstanceOf(net.minecraft.network.chat.ClickEvent.OpenUrl.class, inner.get(DataComponents.CUSTOM_NAME).getStyle().getClickEvent());
-+        assertTrue(inner.get(DataComponents.TOOLTIP_DISPLAY).hiddenComponents().contains(DataComponents.UNBREAKABLE), "show_in_tooltip -> tooltip display");
-+    }
-+
-+    @Test
-+    public void testLegacyEntityEquipment() throws IOException {
-+        CompoundTag sword = new CompoundTag();
-+        sword.putString("id", "minecraft:iron_sword");
-+        sword.putInt("count", 1);
-+        ListTag handItems = new ListTag();
-+        handItems.add(sword);
-+        handItems.add(new CompoundTag());
-+        CompoundTag entity = new CompoundTag();
-+        entity.putString("id", "minecraft:zombie");
-+        entity.put("HandItems", handItems);
-+        CompoundTag internal = new CompoundTag();
-+        internal.put("entity-tag", entity);
-+
-+        ItemStack egg = load(V1_21_4, "ZOMBIE_SPAWN_EGG", ""
-+            + "    meta-type: SPAWN_EGG\n"
-+            + "    internal: " + base64(internal) + "\n");
-+
-+        CompoundTag upgraded = CraftItemStack.asNMSCopy(egg).get(DataComponents.ENTITY_DATA).copyTagWithoutId();
-+        assertEquals("minecraft:iron_sword", upgraded.getCompoundOrEmpty("equipment").getCompoundOrEmpty("mainhand").getString("id").orElseThrow(), upgraded.toString());
-+    }
-+
-+    @Test
-+    public void testCurrentTextUntouched() {
-+        ItemStack stack = new ItemStack(Material.WRITTEN_BOOK);
-+        org.bukkit.inventory.meta.BookMeta meta = (org.bukkit.inventory.meta.BookMeta) stack.getItemMeta();
-+        meta.displayName(net.kyori.adventure.text.Component.text("{\"text\":\"looks like json\"}").clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl("https://example.com")));
-+        meta.lore(java.util.List.of(net.kyori.adventure.text.Component.text("[1, 2]")));
-+        meta.setTitle("t");
-+        meta.setAuthor("a");
-+        meta.addPages(net.kyori.adventure.text.Component.text("page").clickEvent(net.kyori.adventure.text.event.ClickEvent.changePage(1)));
-+        stack.setItemMeta(meta);
-+
-+        YamlConfiguration config = new YamlConfiguration();
-+        config.set("item", stack);
-+        ItemStack loaded = YamlConfiguration.loadConfiguration(new StringReader(config.saveToString())).getItemStack("item");
-+
-+        assertEquals(stack, loaded);
-+    }
-+
-+    @Test
-+    public void testLegacyHiddenFlagsWithUnhandledComponents() throws IOException {
-+        CompoundTag canBreak = new CompoundTag();
-+        CompoundTag predicate = new CompoundTag();
-+        predicate.putString("blocks", "minecraft:stone");
-+        ListTag predicates = new ListTag();
-+        predicates.add(predicate);
-+        canBreak.put("predicates", predicates);
-+        canBreak.putBoolean("show_in_tooltip", false);
-+        CompoundTag unhandled = new CompoundTag();
-+        unhandled.put("minecraft:can_break", canBreak);
-+
-+        ItemStack stack = load(V1_21_4, "DIAMOND_PICKAXE", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    enchants:\n"
-+            + "      minecraft:efficiency: 5\n"
-+            + "    ItemFlags:\n"
-+            + "    - HIDE_ENCHANTS\n"
-+            + "    - HIDE_DESTROYS\n"
-+            + "    hide-tool-tip: true\n"
-+            + "    unhandled: " + base64(unhandled) + "\n");
-+
-+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        net.minecraft.world.item.component.TooltipDisplay display = nms.get(DataComponents.TOOLTIP_DISPLAY);
-+        assertTrue(display.hideTooltip(), "hide-tool-tip must survive the upgraded unhandled components");
-+        assertTrue(display.hiddenComponents().contains(DataComponents.ENCHANTMENTS), "item flags must survive the upgraded unhandled components");
-+        assertTrue(display.hiddenComponents().contains(DataComponents.CAN_BREAK));
-+        assertNotNull(nms.get(DataComponents.CAN_BREAK));
-+    }
-+
-+    @Test
-+    public void testHideAdditionalTooltipMatchesItemFlag() {
-+        CompoundTag enchantments = new CompoundTag();
-+        CompoundTag levels = new CompoundTag();
-+        levels.putInt("minecraft:unbreaking", 1);
-+        enchantments.put("levels", levels);
-+        enchantments.putBoolean("show_in_tooltip", false);
-+        CompoundTag components = new CompoundTag();
-+        components.put("minecraft:enchantments", enchantments);
-+        components.put("minecraft:hide_additional_tooltip", new CompoundTag());
-+        CompoundTag item = new CompoundTag();
-+        item.putString("id", "minecraft:diamond");
-+        item.putInt("count", 1);
-+        item.put("components", components);
-+
-+        CompoundTag converted = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ITEM_STACK, item, V1_21_4, org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion());
-+        ItemStack world = CraftItemStack.asBukkitCopy(net.minecraft.world.item.ItemStack.CODEC.parse(org.bukkit.craftbukkit.CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), converted).getOrThrow());
-+        assertTrue(world.getItemMeta().hasItemFlag(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP), "world data must keep the flag");
-+
-+        ItemStack variable = load(V1_21_4, "DIAMOND", ""
-+            + "    meta-type: UNSPECIFIC\n"
-+            + "    enchants:\n"
-+            + "      minecraft:unbreaking: 1\n"
-+            + "    ItemFlags:\n"
-+            + "    - HIDE_ENCHANTS\n"
-+            + "    - HIDE_ADDITIONAL_TOOLTIP\n");
-+        assertTrue(world.isSimilar(variable), "the same item from world data and from a yaml file must stay similar");
-+    }
-+
-+    @Test
-+    public void testLegacyPaintingVariant() throws IOException {
-+        CompoundTag painting = new CompoundTag();
-+        painting.putString("id", "minecraft:painting");
-+        painting.putString("variant", "minecraft:kebab");
-+        CompoundTag internal = new CompoundTag();
-+        internal.put("EntityTag", painting);
-+
-+        ItemStack stack = load(V1_21_4, "PAINTING", ""
-+            + "    meta-type: ENTITY_TAG\n"
-+            + "    internal: " + base64(internal) + "\n");
-+
-+        net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+        assertEquals("minecraft:kebab", nms.get(DataComponents.PAINTING_VARIANT).unwrapKey().orElseThrow().identifier().toString());
-+        assertFalse(nms.has(DataComponents.ENTITY_DATA), "the entity data only held the variant");
-+    }
-+
-+    @Test
-+    public void testLegacyBucketVariants() {
-+        ItemStack axolotl = load(V1_21_4, "AXOLOTL_BUCKET", ""
-+            + "    meta-type: AXOLOTL_BUCKET\n"
-+            + "    axolotl-variant: 1\n");
-+        net.minecraft.world.item.ItemStack axolotlNms = CraftItemStack.asNMSCopy(axolotl);
-+        assertEquals(net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.WILD, axolotlNms.get(DataComponents.AXOLOTL_VARIANT), "the spawned axolotl reads the component");
-+        assertFalse(axolotlNms.getOrDefault(DataComponents.BUCKET_ENTITY_DATA, net.minecraft.world.item.component.CustomData.EMPTY).copyTag().contains("Variant"), "the ignored variant tag must not be written");
-+
-+        ItemStack fish = load(V1_21_4, "TROPICAL_FISH_BUCKET", ""
-+            + "    meta-type: TROPICAL_FISH_BUCKET\n"
-+            + "    fish-variant: 117506305\n");
-+        net.minecraft.world.item.ItemStack fishNms = CraftItemStack.asNMSCopy(fish);
-+        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getPattern(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN));
-+        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getBaseColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_BASE_COLOR));
-+        assertEquals(net.minecraft.world.entity.animal.fish.TropicalFish.getPatternColor(117506305), fishNms.get(DataComponents.TROPICAL_FISH_PATTERN_COLOR));
-+
-+        CompoundTag bucketTag = new CompoundTag();
-+        bucketTag.putInt("Variant", 2);
-+        bucketTag.putFloat("Health", 10.0F);
-+        net.minecraft.world.item.ItemStack legacyNms = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.AXOLOTL_BUCKET);
-+        legacyNms.set(DataComponents.BUCKET_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(bucketTag));
-+        org.bukkit.inventory.meta.AxolotlBucketMeta legacyMeta = (org.bukkit.inventory.meta.AxolotlBucketMeta) CraftItemStack.asBukkitCopy(legacyNms).getItemMeta();
-+        assertEquals(org.bukkit.entity.Axolotl.Variant.GOLD, legacyMeta.getVariant());
-+
-+        ItemStack api = new ItemStack(Material.AXOLOTL_BUCKET);
-+        api.setItemMeta(legacyMeta);
-+        net.minecraft.world.item.ItemStack apiNms = CraftItemStack.asNMSCopy(api);
-+        assertEquals(net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.GOLD, apiNms.get(DataComponents.AXOLOTL_VARIANT));
-+        assertFalse(apiNms.get(DataComponents.BUCKET_ENTITY_DATA).copyTag().contains("Variant"));
-+        assertEquals(api, CraftItemStack.asBukkitCopy(apiNms), "variant component round trip");
-+    }
- }

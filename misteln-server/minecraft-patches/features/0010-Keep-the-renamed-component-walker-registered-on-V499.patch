@@ -1,0 +1,74 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 13 Oct 2026 13:15:20 +0800
+Subject: [PATCH] Keep the renamed component walker registered on V4996
+
+
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+index 8feebf9dcdbb28dc27ba7c198be8b6579641bb89..fc806983c0f2f99faeceeede76762a9b9be6a431 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4307.java
+@@ -220,23 +220,7 @@ public final class V4307 {
+         });
+ 
+         // Misteln start - walk the other components that name blocks, items or recipes, so renames like chain -> iron_chain reach them
+-        MCTypeRegistry.DATA_COMPONENTS.addStructureWalker(VERSION, new DataWalker<>() {
+-            @Override
+-            public MapType walk(final MapType root, final long fromVersion, final long toVersion) {
+-                final MapType tool = root.getMap("minecraft:tool");
+-                final ListType rules = tool == null ? null : tool.getListUnchecked("rules");
+-                if (rules != null) {
+-                    for (int i = 0, len = rules.size(); i < len; ++i) {
+-                        mistelnConvertHolderSet(MCTypeRegistry.BLOCK_NAME, rules.getMap(i, null), "blocks", fromVersion, toVersion);
+-                    }
+-                }
+-                mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:repairable"), "items", fromVersion, toVersion);
+-                mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:lock"), "items", fromVersion, toVersion);
+-                WalkerUtils.convertKeys(MCTypeRegistry.BLOCK_NAME, root, "minecraft:debug_stick_state", fromVersion, toVersion);
+-                WalkerUtils.convertList(MCTypeRegistry.RECIPE, root, "minecraft:recipes", fromVersion, toVersion);
+-                return null;
+-            }
+-        });
++        MCTypeRegistry.DATA_COMPONENTS.addStructureWalker(VERSION, MISTELN_COMPONENT_WALKER);
+         // a container's lock predicate; the only tile entity structure walker list is the one of V99
+         MCTypeRegistry.TILE_ENTITY.addStructureWalker(V99.VERSION, new DataWalker<>() {
+             @Override
+@@ -248,6 +232,26 @@ public final class V4307 {
+         // Misteln end - walk the other components that name blocks, items or recipes, so renames like chain -> iron_chain reach them
+     }
+ 
++    // Misteln start - shared with V4996, which re-registers the component walker list upstream
++    static final DataWalker<MapType> MISTELN_COMPONENT_WALKER = new DataWalker<>() {
++        @Override
++        public MapType walk(final MapType root, final long fromVersion, final long toVersion) {
++            final MapType tool = root.getMap("minecraft:tool");
++            final ListType rules = tool == null ? null : tool.getListUnchecked("rules");
++            if (rules != null) {
++                for (int i = 0, len = rules.size(); i < len; ++i) {
++                    mistelnConvertHolderSet(MCTypeRegistry.BLOCK_NAME, rules.getMap(i, null), "blocks", fromVersion, toVersion);
++                }
++            }
++            mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:repairable"), "items", fromVersion, toVersion);
++            mistelnConvertHolderSet(MCTypeRegistry.ITEM_NAME, root.getMap("minecraft:lock"), "items", fromVersion, toVersion);
++            WalkerUtils.convertKeys(MCTypeRegistry.BLOCK_NAME, root, "minecraft:debug_stick_state", fromVersion, toVersion);
++            WalkerUtils.convertList(MCTypeRegistry.RECIPE, root, "minecraft:recipes", fromVersion, toVersion);
++            return null;
++        }
++    };
++    // Misteln end - shared with V4996, which re-registers the component walker list upstream
++
+     // Misteln start - a holder set is a single id, a tag or a list of ids
+     private static void mistelnConvertHolderSet(final ca.spottedleaf.dataconverter.minecraft.datatypes.MCValueType type, final MapType data, final String path,
+                                                 final long fromVersion, final long toVersion) {
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V4996.java b/ca/spottedleaf/dataconverter/minecraft/versions/V4996.java
+index b9799d4be7f73ba63169cc821459fc07818b09bc..8440404bf9515e13d1d097f705c6fa5e48bb73cf 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V4996.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V4996.java
+@@ -157,6 +157,7 @@ public final class V4996 {
+                 return null;
+             }
+         });
++        MCTypeRegistry.DATA_COMPONENTS.addStructureWalker(VERSION, V4307.MISTELN_COMPONENT_WALKER); // Misteln - keep walking the components V4307 added
+     }
+ 
+     private V4996() {}

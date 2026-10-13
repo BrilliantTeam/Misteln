@@ -79,12 +79,12 @@ index d999cb8be534fe638320f704ca7affefccaa1d8d..b4dd73090d823b756452de816857414f
  
      private V4541() {}
 diff --git a/net/minecraft/util/datafix/DataFixers.java b/net/minecraft/util/datafix/DataFixers.java
-index f07253e1a05fe518eb20eb4132749f503b395862..af0592cac868c3efdb5ff24cc77eea8867bee5a7 100644
+index 002042d3a57e317f8a628c889092ed37bf3dccbb..4f11e5661055f91eb215392362d7406a7f55b6c8 100644
 --- a/net/minecraft/util/datafix/DataFixers.java
 +++ b/net/minecraft/util/datafix/DataFixers.java
-@@ -1598,6 +1598,7 @@ public class DataFixers {
+@@ -1613,6 +1613,7 @@ public class DataFixers {
          Schema v4541 = fixerUpper.addSchema(4541, SAME_NAMESPACED);
-         fixerUpper.addFixer(BlockRenameFix.create(v4541, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
+         fixerUpper.addFixer(LegacyBlockRenameFix.create(v4541, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
          fixerUpper.addFixer(ItemRenameFix.create(v4541, "Rename chain to iron_chain", createRenamer("minecraft:chain", "minecraft:iron_chain")));
 +        fixerUpper.addFixer(new AdvancementsRenameFix(v4541, false, "Rename chain recipe advancement", createRenamer("minecraft:recipes/decorations/chain", "minecraft:recipes/decorations/iron_chain"))); // Misteln - the recipe was renamed with the block
          Schema v4543 = fixerUpper.addSchema(4543, V4543::new);

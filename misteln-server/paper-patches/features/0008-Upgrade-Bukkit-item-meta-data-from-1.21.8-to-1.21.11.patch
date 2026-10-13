@@ -5,10 +5,10 @@ Subject: [PATCH] Upgrade Bukkit item meta data from 1.21.8 to 1.21.11
 
 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-index 2d6f613a3592f3dad7d71aeb9fc32385dc00b0d9..bbd74f3dde3be920f3f4d22340b55a1b4c7ea049 100644
+index a9c22da00399f221c921826806e18aed5d449381..1fded8b0fc50a7c0f8330d1f1d3d47f41d88be8f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftItemStack.java
-@@ -456,6 +456,11 @@ public final class CraftItemStack extends ItemStack {
+@@ -421,6 +421,11 @@ public final class CraftItemStack extends ItemStack {
              void skullCallback(final ResolvableProfile profile) {
                  itemStack.set(DataComponents.PROFILE, profile);
              }
@@ -20,7 +20,7 @@ index 2d6f613a3592f3dad7d71aeb9fc32385dc00b0d9..bbd74f3dde3be920f3f4d22340b55a1b
          };
          // Paper end - support updating profile after resolving it
          ((CraftMetaItem) itemMeta).applyToItem(tag);
-@@ -511,6 +516,11 @@ public final class CraftItemStack extends ItemStack {
+@@ -476,6 +481,11 @@ public final class CraftItemStack extends ItemStack {
                  void skullCallback(final ResolvableProfile resolvableProfile) {
                      item.set(DataComponents.PROFILE, resolvableProfile);
                  }
@@ -103,10 +103,10 @@ index cc5acbb5f5c32c0564cfd972b3f93d01b81c475e..c45fe59319685c3b836f219918967105
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 46f81442976be070007129897fa56500036951d2..9997a5da9ccddc19da4314b8678f6ca36ea426d0 100644
+index d599a42c17b3116ed4306104700cb33e6125d976..fe6fb982aa25746975aeab9646db0438c5638950 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -217,6 +217,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -218,6 +218,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
  
          final DataComponentPatch.Builder builder = DataComponentPatch.builder();
          void skullCallback(net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {} // Paper - support updating profile after resolving it
@@ -205,92 +205,3 @@ index 5b445713fa75bb0df9f55e46f42e68ca5fdf64f8..fe5c7781accf56f22b39fd780313e2f7
      static boolean needsUpgrade(final int version) {
          return version < CraftMagicNumbers.INSTANCE.getDataVersion();
      }
-diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-index e8fe8955fe140cfdda3b95e2351e8208b7fd6c25..5554a9502b7bdc5a40d63d8d33ac10c056e752b2 100644
---- a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-+++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-@@ -27,12 +27,13 @@ import org.bukkit.support.environment.AllFeatures;
- import org.bukkit.tag.DamageTypeTags;
- import org.junit.jupiter.api.Test;
- 
--// Misteln - DFU: items serialized by 1.21.1 (data version 3955) and 1.21.4 (4189) must still load
-+// Misteln - DFU: items serialized by 1.21.1 (data version 3955), 1.21.4 (4189) and 1.21.8 (4440) must still load
- @AllFeatures
- public class ItemMetaDataUpgradeTest {
- 
-     private static final int V1_21_1 = 3955;
-     private static final int V1_21_4 = 4189;
-+    private static final int V1_21_8 = 4440;
- 
-     static String base64(CompoundTag tag) throws IOException {
-         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-@@ -470,4 +471,69 @@ public class ItemMetaDataUpgradeTest {
-         assertFalse(apiNms.get(DataComponents.BUCKET_ENTITY_DATA).copyTag().contains("Variant"));
-         assertEquals(api, CraftItemStack.asBukkitCopy(apiNms), "variant component round trip");
-     }
-+
-+    @Test
-+    public void testChainAndSpearAnimation() throws IOException {
-+        CompoundTag chain = new CompoundTag();
-+        chain.putString("id", "minecraft:chain");
-+        chain.putInt("count", 3);
-+        CompoundTag slot = new CompoundTag();
-+        slot.putInt("slot", 0);
-+        slot.put("item", chain);
-+        ListTag container = new ListTag();
-+        container.add(slot);
-+        CompoundTag consumable = new CompoundTag();
-+        consumable.putString("animation", "spear");
-+        CompoundTag unhandled = new CompoundTag();
-+        unhandled.put("minecraft:container", container);
-+        unhandled.put("minecraft:consumable", consumable);
-+
-+        // 1.21.4 servers upgrade straight to this version, without re-saving on 1.21.8 first
-+        for (int version : new int[]{V1_21_4, V1_21_8}) {
-+            ItemStack stack = load(version, "CHAIN", ""
-+                + "    meta-type: UNSPECIFIC\n"
-+                + "    unhandled: " + base64(unhandled) + "\n");
-+
-+            assertEquals(Material.IRON_CHAIN, stack.getType(), "chain -> iron_chain from " + version);
-+            net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(stack);
-+            assertEquals(net.minecraft.world.item.Items.IRON_CHAIN, nms.get(DataComponents.CONTAINER).copyOne().getItem(), "nested chain -> iron_chain from " + version);
-+            assertEquals(net.minecraft.world.item.ItemUseAnimation.TRIDENT, nms.get(DataComponents.CONSUMABLE).animation(), "the old spear animation is the trident one from " + version);
-+        }
-+    }
-+
-+    @Test
-+    public void testEntityTagWithoutId() throws IOException {
-+        CompoundTag frame = new CompoundTag();
-+        frame.putBoolean("Invisible", true);
-+        CompoundTag frameInternal = new CompoundTag();
-+        frameInternal.put("EntityTag", frame);
-+        CompoundTag egg = new CompoundTag();
-+        egg.putBoolean("NoAI", true);
-+        CompoundTag eggInternal = new CompoundTag();
-+        eggInternal.put("entity-tag", egg);
-+
-+        // 1.21.4 servers upgrade straight to this version, without re-saving on 1.21.8 first
-+        for (int version : new int[]{V1_21_4, V1_21_8}) {
-+            ItemStack frameStack = load(version, "ITEM_FRAME", ""
-+                + "    meta-type: ENTITY_TAG\n"
-+                + "    internal: " + base64(frameInternal) + "\n");
-+            net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> frameData = CraftItemStack.asNMSCopy(frameStack).get(DataComponents.ENTITY_DATA);
-+            assertEquals(net.minecraft.world.entity.EntityTypes.ITEM_FRAME, frameData.type(), "from " + version);
-+            assertTrue(frameData.copyTagWithoutId().getBooleanOr("Invisible", false), "from " + version);
-+
-+            ItemStack eggStack = load(version, "PIG_SPAWN_EGG", ""
-+                + "    meta-type: SPAWN_EGG\n"
-+                + "    internal: " + base64(eggInternal) + "\n");
-+            net.minecraft.world.item.component.TypedEntityData<net.minecraft.world.entity.EntityType<?>> eggData = CraftItemStack.asNMSCopy(eggStack).get(DataComponents.ENTITY_DATA);
-+            assertEquals(net.minecraft.world.entity.EntityTypes.PIG, eggData.type(), "from " + version);
-+            assertTrue(eggData.copyTagWithoutId().getBooleanOr("NoAI", false), "from " + version);
-+        }
-+
-+        org.bukkit.inventory.meta.SpawnEggMeta meta = (org.bukkit.inventory.meta.SpawnEggMeta) new ItemStack(Material.ZOMBIE_SPAWN_EGG).getItemMeta();
-+        meta.setCustomSpawnedType(org.bukkit.entity.EntityType.PIG);
-+        meta.setCustomSpawnedType(null);
-+        ItemStack api = new ItemStack(Material.ZOMBIE_SPAWN_EGG);
-+        assertTrue(api.setItemMeta(meta), "an id-less entity tag must not throw");
-+        assertEquals(net.minecraft.world.entity.EntityTypes.ZOMBIE, CraftItemStack.asNMSCopy(api).get(DataComponents.ENTITY_DATA).type());
-+    }
- }

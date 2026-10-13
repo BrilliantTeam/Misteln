@@ -1,9 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: RICE0707 <master.end.9377@gmail.com>
-Date: Wed, 23 Sep 2026 11:13:45 +0800
-Subject: [PATCH] Test the world border migration out of level.dat
+Date: Tue, 13 Oct 2026 16:15:19 +0800
+Subject: [PATCH] World border migration test
 
-Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
 
 diff --git a/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java b/src/test/java/org/bukkit/craftbukkit/util/WorldBorderMigrationTest.java
 new file mode 100644
