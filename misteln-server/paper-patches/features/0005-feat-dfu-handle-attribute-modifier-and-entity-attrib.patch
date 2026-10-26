@@ -37,10 +37,10 @@ index 5a5f6d387a6e763cd673af3d2821f84d0119056e..197885a1231d0548fae6967812a232c0
      void serializeInternal(final Map<String, Tag> internalTags) {
          // Paper start - new serialization format
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index b623a882a1bd04380e379a2662ab77e9247ceeff..5e5726d49f0e73e44041843411f938de3dd93e72 100644
+index cd778432ef349b0ed2a2164ea0e93fd9712ded04..014606d0174f94255b9ce2050f5003b88b3efc8e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -839,6 +839,21 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -841,6 +841,21 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          return tag.getString(Entity.TAG_ID).filter(id -> id.equals(expectedId)).isPresent();
      }
  
@@ -62,7 +62,7 @@ index b623a882a1bd04380e379a2662ab77e9247ceeff..5e5726d49f0e73e44041843411f938de
      private static Multimap<Attribute, AttributeModifier> buildModifiersLegacy(CompoundTag tag, ItemMetaKey key) {
          Multimap<Attribute, AttributeModifier> modifiers = LinkedHashMultimap.create();
          ListTag mods = tag.getListOrEmpty(key.NBT);
-@@ -848,6 +863,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -850,6 +865,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  // entry is not an actual CompoundTag. getCompoundOrEmpty returns empty CompoundTag in that case
                  continue;
              }

@@ -33,7 +33,7 @@ index a9c22da00399f221c921826806e18aed5d449381..1fded8b0fc50a7c0f8330d1f1d3d47f4
              // Paper end - support updating profile after resolving it
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
-index 0745d5951acaedd8d0deae833446529a5ada9088..ff0a1e73d437a41e2ffbe5009c24072550c9448d 100644
+index 9f11cd764e0f400492c81c9360d9eeeafcccfd99..dcf138a51bc9c7dd7326069d3b630b09c6f4fec5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmorStand.java
 @@ -108,9 +108,12 @@ public class CraftMetaArmorStand extends CraftMetaItem implements com.destroysto
@@ -103,10 +103,10 @@ index cc5acbb5f5c32c0564cfd972b3f93d01b81c475e..c45fe59319685c3b836f219918967105
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index d599a42c17b3116ed4306104700cb33e6125d976..fe6fb982aa25746975aeab9646db0438c5638950 100644
+index 79aad0650217d864ab64570e87b45a6dde74942c..e296821173bc16485cac360131e0628f2f9bb5eb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -218,6 +218,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -220,6 +220,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
  
          final DataComponentPatch.Builder builder = DataComponentPatch.builder();
          void skullCallback(net.minecraft.world.item.component.ResolvableProfile resolvableProfile) {} // Paper - support updating profile after resolving it

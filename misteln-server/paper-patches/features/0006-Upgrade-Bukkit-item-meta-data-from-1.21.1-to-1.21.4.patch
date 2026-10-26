@@ -80,10 +80,10 @@ index 197885a1231d0548fae6967812a232c0e9f279a8..1293e1401e900b6e5893da91624486c4
      // Misteln end
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67400e2b9f 100644
+index 014606d0174f94255b9ce2050f5003b88b3efc8e..b9859cc715187e9d6e273df130564a90a159ee6f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -357,6 +357,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -359,6 +359,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      private CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftMetaItem.DATA_TYPE_REGISTRY);
  
      private int version = CraftMagicNumbers.INSTANCE.getDataVersion(); // Internal use only
@@ -95,7 +95,7 @@ index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67
  
      CraftMetaItem(CraftMetaItem meta) {
          if (meta == null) {
-@@ -697,6 +702,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -699,6 +704,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  this.damageResistantTypes = damageResistantTypes;
              }
          }
@@ -107,7 +107,7 @@ index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67
  
          Integer maxStackSize = SerializableMeta.getObject(Integer.class, map, CraftMetaItem.MAX_STACK_SIZE.BUKKIT, true);
          if (maxStackSize != null) {
-@@ -721,6 +731,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -723,6 +733,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          CraftFoodComponent food = SerializableMeta.getObject(CraftFoodComponent.class, map, CraftMetaItem.FOOD.BUKKIT, true);
          if (food != null) {
              this.setFood(food);
@@ -122,7 +122,7 @@ index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67
          }
  
          CraftToolComponent tool = SerializableMeta.getObject(CraftToolComponent.class, map, CraftMetaItem.TOOL.BUKKIT, true);
-@@ -764,25 +782,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -766,25 +784,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
              ByteArrayInputStream buf = new ByteArrayInputStream(Base64.getDecoder().decode(unhandled));
              try {
                  CompoundTag unhandledTag = NbtIo.readCompressed(buf, NbtAccounter.unlimitedHeap());
@@ -150,10 +150,10 @@ index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67
 +                this.legacyUnhandledPatch = DataComponentPatch.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), unhandledTag).resultOrPartial(error -> this.legacyUnhandledError = error).orElse(DataComponentPatch.EMPTY);
 +                this.applyUnhandled(this.legacyUnhandledPatch);
 +                // Misteln end
-             } catch (IOException ex) {
+             } catch (IOException | ReportedNbtException | NbtException ex) {
                  LOGGER.error("Failed to read unhandled tag for item", ex);
              }
-@@ -819,6 +823,28 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -821,6 +825,28 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
      }
  
@@ -182,7 +182,7 @@ index 5e5726d49f0e73e44041843411f938de3dd93e72..76562a97155cf08b8ced477916800d67
      void deserializeInternal(CompoundTag tag, Object context) {
          // SPIGOT-4576: Need to migrate from internal to proper data
          if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
-@@ -2454,6 +2480,39 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2456,6 +2482,39 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      @Override
      public void setVersion(int version) {
          this.version = version;

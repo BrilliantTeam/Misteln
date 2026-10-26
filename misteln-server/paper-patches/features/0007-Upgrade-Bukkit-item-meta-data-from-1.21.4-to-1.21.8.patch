@@ -17,7 +17,7 @@ index 4b936b05e21c077a3737bcde356113292aee0240..0199e2e03c9ac169a51e13ffe7b5ddaf
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
-index 4b6cf1e39c88b975cb8181eadfc7b371ccd1c4bd..0fd15fffc8f297b9c743883f3bba00802954d2f5 100644
+index 21278df83367497d1db5d1b472ce43568ccb1224..c97feed69d355f8b6e9ff6cf8c31db1a5646e715 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBookSigned.java
 @@ -44,6 +44,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
@@ -89,10 +89,10 @@ index 49ec2d9213d424f2f1f0ec8bf7b39720cb800612..cc5acbb5f5c32c0564cfd972b3f93d01
      }
      // Misteln end
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e6125d976 100644
+index b9859cc715187e9d6e273df130564a90a159ee6f..79aad0650217d864ab64570e87b45a6dde74942c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-@@ -362,6 +362,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -364,6 +364,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      private DataComponentPatch legacyUnhandledPatch;
      private String legacyUnhandledError;
      // Misteln end
@@ -104,7 +104,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
  
      CraftMetaItem(CraftMetaItem meta) {
          if (meta == null) {
-@@ -613,10 +618,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -615,10 +620,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      CraftMetaItem(Map<String, Object> map) {
          this.displayName = CraftChatMessage.fromJSONOrString(SerializableMeta.getString(map, CraftMetaItem.CUSTOM_NAME.BUKKIT, true), true, false);
          this.itemName = CraftChatMessage.fromJSONOrNull(SerializableMeta.getString(map, CraftMetaItem.ITEM_NAME.BUKKIT, true));
@@ -120,7 +120,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
          }
  
          Object customModelData = SerializableMeta.getObject(Object.class, map, CraftMetaItem.CUSTOM_MODEL_DATA.BUKKIT, true);
-@@ -670,6 +680,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -672,6 +682,12 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
              }
          }
  
@@ -133,7 +133,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
          String tooltipStyle = SerializableMeta.getString(map, CraftMetaItem.TOOLTIP_STYLE.BUKKIT, true);
          if (tooltipStyle != null) {
              this.setTooltipStyle(NamespacedKey.fromString(tooltipStyle));
-@@ -704,7 +720,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -706,7 +722,7 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
          // Misteln start - DFU: fire-resistant was replaced by damage-resistant #minecraft:is_fire in 1.21.2 (see V4064)
          if (!this.hasDamageResistant() && SerializableMeta.getBoolean(map, "fire-resistant")) {
@@ -142,7 +142,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
          }
          // Misteln end
  
-@@ -754,6 +770,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -756,6 +772,11 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          CraftJukeboxComponent jukeboxPlayable = SerializableMeta.getObject(CraftJukeboxComponent.class, map, CraftMetaItem.JUKEBOX_PLAYABLE.BUKKIT, true);
          if (jukeboxPlayable != null) {
              this.setJukeboxPlayable(jukeboxPlayable);
@@ -154,7 +154,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
          }
  
          Integer damage = SerializableMeta.getObject(Integer.class, map, CraftMetaItem.DAMAGE.BUKKIT, true);
-@@ -823,6 +844,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -825,6 +846,15 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
          }
      }
  
@@ -170,7 +170,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
      // Misteln start - DFU: moved out of the map constructor so upgraded components can be applied again
      private void applyUnhandled(DataComponentPatch unhandledPatch) {
          CraftMetaItem.getOrEmpty(unhandledPatch, CraftMetaItem.CAN_PLACE_ON).ifPresent(data -> {
-@@ -2480,6 +2510,31 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2482,6 +2512,31 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
      @Override
      public void setVersion(int version) {
          this.version = version;
@@ -202,7 +202,7 @@ index 76562a97155cf08b8ced477916800d67400e2b9f..d599a42c17b3116ed4306104700cb33e
          // Misteln start - DFU: upgrade the unhandled components if they were written by an older version
          final CompoundTag legacyTag = this.legacyUnhandledTag;
          final DataComponentPatch legacyPatch = this.legacyUnhandledPatch;
-@@ -2506,7 +2561,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
+@@ -2508,7 +2563,14 @@ public class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDat
                  if (CraftMetaItem.getOrEmpty(legacyPatch, CraftMetaItem.CAN_BREAK).isPresent()) {
                      this.canBreakPredicates = null;
                  }
