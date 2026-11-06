@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Fri, 06 Nov 2026 10:23:43 +0800
+Subject: [PATCH] Fix legacy shield item meta
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+index 46b8e3356dc2c10971fb6cf368841990c4b9710a..aac39da696e42a3778be3554095f6cdf120d6bbd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBlockState.java
+@@ -73,7 +73,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         this.blockEntityTag = this.blockEntityTag != null ? this.blockEntityTag : EMPTY_TAG;
+     }
+     private Material materialForBlockEntityType() {
+-        return this.material;
++        if (this.material != Material.SHIELD) return this.material; // Misteln start - legacy shield block state metas
++        final net.minecraft.world.item.DyeColor color = this.components.get(DataComponents.BASE_COLOR);
++        return CraftMetaShield.shieldToBannerHack(color == null ? null : DyeColor.getByWoolData((byte) color.getId())); // Misteln end
+     }
+     // Paper end
+     private CompoundTag internalTag;
+@@ -268,6 +270,9 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
+         if (legacyInternalTag != null) {
+             // pre 1.20.5 BlockEntityTag, nothing else was read
+             this.setBlockState(CraftMetaBlockState.getBlockState(this.material, ItemMetaDataUpgrader.upgradeBlockEntity(legacyInternalTag, CraftBlockStates.getBlockEntityType(this.materialForBlockEntityType()), version)));
++            if (this.material == Material.SHIELD) {
++                legacyInternalTag.getInt("Base").ifPresent(base -> this.components = DataComponentMap.builder().addAll(this.components).set(DataComponents.BASE_COLOR, net.minecraft.world.item.DyeColor.byId(base)).build());
++            }
+             return;
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+index 35b6081ed57113ce4440bf41394231bed5ca8aa8..d93343d6f59b68023eb88635ffe8795853e4ee42 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+@@ -42,12 +42,33 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
+         if (meta instanceof CraftMetaShield craftMetaShield) {
+             if (craftMetaShield.patterns != null) this.patterns = new ArrayList<>(craftMetaShield.getPatterns());
+             if (craftMetaShield.baseColor != null) this.baseColor = craftMetaShield.baseColor;
+-        } else if (meta instanceof CraftMetaBlockState state && state.hasBlockState() && state.getBlockState() instanceof Banner banner) {
++        } else if (meta instanceof CraftMetaBlockState state) { // Misteln start - upgrade legacy shield block state metas in setVersion
++            this.legacyBlockState = state;
++            this.copyBanner(state);
++        }
++    }
++
++    private @org.jetbrains.annotations.Nullable CraftMetaBlockState legacyBlockState;
++
++    private void copyBanner(CraftMetaBlockState state) {
++        if (state.hasBlockState() && state.getBlockState() instanceof Banner banner) {
+             this.patterns = banner.getPatterns();
+             this.baseColor = banner.getBaseColor();
+         }
+     }
+ 
++    @Override
++    public void setVersion(int version) {
++        super.setVersion(version);
++        final CraftMetaBlockState state = this.legacyBlockState;
++        this.legacyBlockState = null;
++        if (state != null && ItemMetaDataUpgrader.needsUpgrade(version)) {
++            state.setVersion(version);
++            this.copyBanner(state);
++        }
++    }
++    // Misteln end
++
+     CraftMetaShield(DataComponentPatch patch, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledComponents) {
+         super(patch, extraHandledComponents);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+index ae4ca5aefe6b467bcc2a3ec7a11a5d8a12060fd0..d933f6205e4f2fd643d23fc1ea63ae2cec897ba4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/SerializableMeta.java
+@@ -9,7 +9,6 @@ import java.util.List;
+ import java.util.Map;
+ import java.util.NoSuchElementException;
+ import java.util.Optional;
+-import org.bukkit.block.Banner;
+ import org.bukkit.configuration.serialization.ConfigurationSerializable;
+ import org.bukkit.configuration.serialization.SerializableAs;
+ import org.bukkit.inventory.meta.ItemMeta;
+@@ -80,7 +79,7 @@ public final class SerializableMeta implements ConfigurationSerializable {
+             CraftMetaItem meta = constructor.newInstance(map);
+ 
+             // Convert Shield CraftMetaBlockState to CraftMetaShield
+-            if (meta instanceof CraftMetaBlockState state && state.hasBlockState() && state.getBlockState() instanceof Banner) {
++            if (meta instanceof CraftMetaBlockState state && state.material == org.bukkit.Material.SHIELD) { // Misteln - legacy shield block state metas may only hold data after setVersion
+                 meta = new CraftMetaShield(meta);
+                 meta.unhandledTags.clear(CraftMetaShield.BASE_COLOR.TYPE);
+             }

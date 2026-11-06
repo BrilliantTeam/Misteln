@@ -6,10 +6,10 @@ Subject: [PATCH] Item meta data upgrade tests
 
 diff --git a/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5e0035660dbda4b12bafee01ac60f8b38c6832c4
+index 0000000000000000000000000000000000000000..5f04401126a8d68d4c94b460d96d0f1451ed1c55
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/ItemMetaDataUpgradeTest.java
-@@ -0,0 +1,673 @@
+@@ -0,0 +1,718 @@
 +package org.bukkit.craftbukkit.inventory;
 +
 +import static org.junit.jupiter.api.Assertions.*;
@@ -189,6 +189,51 @@ index 0000000000000000000000000000000000000000..5e0035660dbda4b12bafee01ac60f8b3
 +
 +        net.minecraft.world.item.ItemStack inner = CraftItemStack.asNMSCopy(stack).get(DataComponents.CONTAINER).copyOne();
 +        assertEquals("minecraft:attack_damage", inner.get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers().getFirst().attribute().unwrapKey().orElseThrow().identifier().toString());
++    }
++
++    @Test
++    public void testLegacyShieldBlockState() throws IOException {
++        CompoundTag pattern = new CompoundTag();
++        pattern.putString("pattern", "minecraft:stripe_top");
++        pattern.putString("color", "blue");
++        ListTag patterns = new ListTag();
++        patterns.add(pattern);
++        CompoundTag components = new CompoundTag();
++        components.putString("minecraft:base_color", "red");
++        components.put("minecraft:banner_patterns", patterns);
++        CompoundTag internal = new CompoundTag();
++        internal.put("block-entity-components", components);
++
++        assertRedShieldWithBlueStripe(load(V1_21_1, "SHIELD", ""
++            + "    meta-type: TILE_ENTITY\n"
++            + "    blockMaterial: SHIELD\n"
++            + "    internal: " + base64(internal) + "\n"));
++    }
++
++    @Test
++    public void testPre1205ShieldBlockState() throws IOException {
++        CompoundTag pattern = new CompoundTag();
++        pattern.putString("Pattern", "ts");
++        pattern.putInt("Color", 11);
++        ListTag patterns = new ListTag();
++        patterns.add(pattern);
++        CompoundTag blockEntity = new CompoundTag();
++        blockEntity.putInt("Base", 14);
++        blockEntity.put("Patterns", patterns);
++        CompoundTag internal = new CompoundTag();
++        internal.put("BlockEntityTag", blockEntity);
++
++        assertRedShieldWithBlueStripe(load(3700, "SHIELD", ""
++            + "    meta-type: TILE_ENTITY\n"
++            + "    blockMaterial: SHIELD\n"
++            + "    internal: " + base64(internal) + "\n"));
++    }
++
++    private static void assertRedShieldWithBlueStripe(ItemStack stack) {
++        org.bukkit.inventory.meta.ShieldMeta meta = (org.bukkit.inventory.meta.ShieldMeta) stack.getItemMeta();
++        assertEquals(org.bukkit.DyeColor.RED, meta.getBaseColor());
++        assertEquals(1, meta.getPatterns().size());
++        assertEquals(org.bukkit.DyeColor.BLUE, meta.getPatterns().getFirst().getColor());
 +    }
 +
 +    @Test
