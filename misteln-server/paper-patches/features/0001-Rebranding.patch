@@ -5,10 +5,10 @@ Subject: [PATCH] Rebranding
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-index 0e77ec2dec9ef92458e5c99f195ab48e7128a0dc..a4fbe68cbdc0e1fe8472aba14a9a5e9989401bdc 100644
+index 7a389c2ab1441ab1623ac81ad234ba640fae988c..3ad83f96da06590db87e75a2a5d936701af4bb36 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-@@ -21,7 +21,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
+@@ -27,7 +27,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
      @Override
      protected LineReader buildReader(LineReaderBuilder builder) {
          builder
