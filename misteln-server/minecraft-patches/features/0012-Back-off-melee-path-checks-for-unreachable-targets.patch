@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sun, 15 Nov 2026 15:44:18 +0800
+Subject: [PATCH] Back off melee path checks for unreachable targets
+
+
+diff --git a/net/minecraft/world/entity/ai/goal/MeleeAttackGoal.java b/net/minecraft/world/entity/ai/goal/MeleeAttackGoal.java
+index 4ac8b0f115e80b5dfe7ee315c1ec3aafdab9e79b..e0c2687d76d939e27a76568eb133a6d645d5e7e8 100644
+--- a/net/minecraft/world/entity/ai/goal/MeleeAttackGoal.java
++++ b/net/minecraft/world/entity/ai/goal/MeleeAttackGoal.java
+@@ -21,6 +21,11 @@ public class MeleeAttackGoal extends Goal {
+     private final int attackInterval = 20;
+     private long lastCanUseCheck;
+     private static final long COOLDOWN_BETWEEN_CAN_USE_CHECKS = 20L;
++    // Misteln start - back off path checks for unreachable targets
++    private int unreachableTargetId;
++    private int unreachableChecks;
++    private int skippedChecks;
++    // Misteln end - back off path checks for unreachable targets
+ 
+     public MeleeAttackGoal(final PathfinderMob mob, final double speedModifier, final boolean followingTargetEvenIfNotSeen) {
+         this.mob = mob;
+@@ -46,8 +51,20 @@ public class MeleeAttackGoal extends Goal {
+             return false;
+         }
+ 
++        // Misteln start - back off path checks for unreachable targets
++        if (target.getId() != this.unreachableTargetId) {
++            this.unreachableTargetId = target.getId();
++            this.unreachableChecks = 0;
++        } else if (this.skippedChecks < Math.min(this.unreachableChecks, 4)) {
++            this.skippedChecks++;
++            return false;
++        }
++        this.skippedChecks = 0;
+         this.path = this.mob.getNavigation().createPath(target, 0);
+-        return this.path != null || this.mob.isWithinMeleeAttackRange(target);
++        final boolean withinRange = this.mob.isWithinMeleeAttackRange(target);
++        this.unreachableChecks = withinRange || this.path != null && this.path.canReach() ? 0 : this.unreachableChecks + 1;
++        return this.path != null || withinRange;
++        // Misteln end - back off path checks for unreachable targets
+     }
+ 
+     @Override
