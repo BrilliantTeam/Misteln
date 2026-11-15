@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MrPowerGamerBR <git@mrpowergamerbr.com>
+Date: Sun, 15 Nov 2026 21:15:57 +0800
+Subject: [PATCH] SparklyPaper: Optimize "canSee" checks
+
+Original project: https://github.com/SparklyPower/SparklyPaper
+Ported from: https://github.com/Winds-Studio/Leaf
+
+The "canSee" checks is in a hot path, invoked by each entity for each player on the server if they are in tracking range.
+
+Use a fastutil map, check isEmpty() before containsKey, and give ChunkMap#updatePlayer a variant without the equals check, since updatePlayer already rejects the same entity.
+
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index fd0b9f20fbdd523d51550fd6009b5011e6e7e6e6..85096eed90d6e8dcc1fcc89996a5fb2ec63b9744 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1431,7 +1431,7 @@ public class ChunkMap extends SimpleRegionStorage implements ChunkHolder.PlayerP
+                     && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x(), this.entity.chunkPosition().z());
+                 // Paper end - Configurable entity tracking range by Y
+                 // CraftBukkit start - respect vanish API
+-                if (visibleToPlayer && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
++                if (visibleToPlayer && !player.getBukkitEntity().canSeeChunkMapUpdatePlayer(this.entity.getBukkitEntity())) { // Paper - only consider hits // SparklyPaper - optimize canSee
+                     visibleToPlayer = false;
+                 }
+                 // CraftBukkit end
