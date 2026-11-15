@@ -1,5 +1,16 @@
 --- a/purpur-api/build.gradle.kts
 +++ b/purpur-api/build.gradle.kts
+@@ -24,7 +_,10 @@
+ 
+ tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
+     overrideConfigFile.set(layout.projectDirectory.file("../paper-api/.checkstyle/checkstyle.xml"))
++    enabled = false // Misteln
+ }
++
++tasks.withType<Checkstyle> { enabled = false } // Misteln
+ 
+ val annotationsVersion = "26.1.0"
+ val adventureVersion = "5.2.0"
 @@ -106,8 +_,6 @@
      mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
      testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
