@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Sun, 15 Nov 2026 22:52:43 +0800
+Subject: [PATCH] Throttle goal selectors by DAB priority
+
+Runs the target and goal selectors every activatedPriority ticks (capped at 3) and alternates full and running-only passes on the throttled count instead of tickCount, so an even rate can no longer pin a mob to running-only passes.
+
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index 73061fce5535c38b3e120a09e71fbe8e1c3188a6..86b6feaab68e2fc088788db6bc9b7d2ec642dc75 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -221,6 +221,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+ 
+     // Paper start
+     private int inactiveTickDisableCounter;
++    private int selectorThrottleCounter; // Misteln - throttle goal selectors by DAB priority
+ 
+     @Override
+     public void inactiveTick() {
+@@ -854,7 +855,12 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+         profiler.push("sensing");
+         this.sensing.tick();
+         profiler.pop();
+-        int idBasedTickCount = this.tickCount + this.getId();
++        // Misteln start - throttle goal selectors by DAB priority
++        final int selectorRate = Math.min(this.activatedPriority, 3);
++        final int selectorCount = this.selectorThrottleCounter++;
++        if (selectorRate <= 1 || selectorCount % selectorRate == 0) {
++        int idBasedTickCount = selectorRate <= 1 ? this.tickCount + this.getId() : selectorCount / selectorRate;
++        // Misteln end - throttle goal selectors by DAB priority
+         if (idBasedTickCount % 2 != 0 && this.tickCount > 1) {
+             profiler.push("targetSelector");
+             this.targetSelector.tickRunningGoals(false);
+@@ -870,6 +876,7 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
+             this.goalSelector.tick();
+             profiler.pop();
+         }
++        } // Misteln - throttle goal selectors by DAB priority
+ 
+         profiler.push("navigation");
+         this.navigation.tick();

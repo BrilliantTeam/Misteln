@@ -96,44 +96,6 @@ index e4fd3727cdf99bebed91ac195034e988cdc9951b..af7ae155a43f20d48538aa82053f6b9f
      private final String descriptionId;
      private @Nullable Component description;
      private final Optional<ResourceKey<LootTable>> lootTable;
-diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 73061fce5535c38b3e120a09e71fbe8e1c3188a6..3f52449e62140ac82cfc584f02c2d4836202dab5 100644
---- a/net/minecraft/world/entity/Mob.java
-+++ b/net/minecraft/world/entity/Mob.java
-@@ -227,10 +227,10 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
-         super.inactiveTick();
-         if (!this.aware) return; // Paper - Do not tick AI for inactive unaware mobs
-         final boolean isThrottled = this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.enabled() && inactiveTickDisableCounter++ % this.level().paperConfig().entities.behavior.inactiveMobGoalSelectorThrottleRate.intValue() != 0; // Paper - Throttle inactive goal selector ticking
--        if (this.goalSelector.inactiveTick() && !isThrottled) {
-+        if (this.goalSelector.inactiveTick(this.activatedPriority, true) && !isThrottled) { // Pufferfish - pass activated priority
-             this.goalSelector.tick();
-         }
--        if (this.targetSelector.inactiveTick()) {
-+        if (this.targetSelector.inactiveTick(this.activatedPriority, true)) { // Pufferfish - pass activated priority
-             this.targetSelector.tick();
-         }
-     }
-@@ -857,16 +857,20 @@ public abstract class Mob extends LivingEntity implements Targeting, EquipmentUs
-         int idBasedTickCount = this.tickCount + this.getId();
-         if (idBasedTickCount % 2 != 0 && this.tickCount > 1) {
-             profiler.push("targetSelector");
-+            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
-             this.targetSelector.tickRunningGoals(false);
-             profiler.pop();
-             profiler.push("goalSelector");
-+            if (this.goalSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
-             this.goalSelector.tickRunningGoals(false);
-             profiler.pop();
-         } else {
-             profiler.push("targetSelector");
-+            if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
-             this.targetSelector.tick();
-             profiler.pop();
-             profiler.push("goalSelector");
-+            if (this.goalSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
-             this.goalSelector.tick();
-             profiler.pop();
-         }
 diff --git a/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java b/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java
 index bb037ea27688a06bb0d8141ef25d2543d34aba80..a841999aceb9bcdff8de7b052aaddc0ac0fed98a 100644
 --- a/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java
@@ -151,25 +113,6 @@ index bb037ea27688a06bb0d8141ef25d2543d34aba80..a841999aceb9bcdff8de7b052aaddc0a
              body.spawnGolemIfNeeded(level, timestamp, 3);
          }
      }
-diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 0439543fbb25ddb974550fe9dbdaa479e330937d..25259e990997dac330a38dd909975f6d0f9be0a7 100644
---- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
-+++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -42,9 +42,12 @@ public class GoalSelector {
-     }
- 
-     // Paper start - EAR 2
--    public boolean inactiveTick() {
-+    public boolean inactiveTick(int tickRate, final boolean inactive) { // Pufferfish start
-+        if (inactive && !org.brilliantw.misteln.MistelnConfig.dabEnabled) tickRate = 4; // reset to Paper's
-+        tickRate = Math.min(tickRate, 3);
-         this.curRate++;
--        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
-+        return this.curRate % tickRate == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
-+        // Pufferfish end
-     }
- 
-     public boolean hasTasks() {
 diff --git a/net/minecraft/world/entity/animal/allay/Allay.java b/net/minecraft/world/entity/animal/allay/Allay.java
 index 4ad9a8d54bb804c8692f9eba0f7c5affca8d6de3..fcc8d5a8b7802e4a35d995df8e241ffac9c13582 100644
 --- a/net/minecraft/world/entity/animal/allay/Allay.java
