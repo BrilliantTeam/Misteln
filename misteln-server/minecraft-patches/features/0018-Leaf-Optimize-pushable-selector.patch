@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Mon, 16 Nov 2026 22:27:37 +0800
+Subject: [PATCH] Leaf: Optimize pushable selector
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Co-authored-by: OverwriteMC <artyom030803@gmail.com>
+
+Avoid the duplicated isPushable check in the pushable selector, canCollideWithBukkit already performs it for both Entity and LivingEntity. The spectator check is inlined instead of composing two predicates.
+
+diff --git a/net/minecraft/world/entity/EntitySelector.java b/net/minecraft/world/entity/EntitySelector.java
+index d449654d21a9d160c1a2825f6c8bee1a166a4a72..3525d495ebb350e21d77fb479a03ececc20a07ab 100644
+--- a/net/minecraft/world/entity/EntitySelector.java
++++ b/net/minecraft/world/entity/EntitySelector.java
+@@ -49,9 +49,8 @@ public final class EntitySelector {
+         Team.CollisionRule ownCollisionRule = ownTeam == null ? Team.CollisionRule.ALWAYS : ownTeam.getCollisionRule();
+         return ownCollisionRule == Team.CollisionRule.NEVER
+             ? Predicates.alwaysFalse()
+-            : NO_SPECTATORS.and(
+-                input -> {
+-                    if (!input.isPushable() || !input.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(input)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
++            : input -> { // Misteln - optimize pushable selector
++                    if (input.isSpectator() || !input.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(input)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule // Misteln - optimize pushable selector
+                         return false;
+                     }
+ 
+@@ -71,8 +70,7 @@ public final class EntitySelector {
+                     } else {
+                         return false;
+                     }
+-                }
+-            );
++                }; // Misteln - optimize pushable selector
+     }
+ 
+     public static Predicate<Entity> notRiding(final Entity entity) {
