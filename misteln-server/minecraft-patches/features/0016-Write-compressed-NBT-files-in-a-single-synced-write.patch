@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Mon, 16 Nov 2026 20:38:32 +0800
+Subject: [PATCH] Write compressed NBT files in a single synced write
+
+NbtIo.writeCompressed(tag, path) opened the file with SYNC and wrapped it in an 8 KB buffer, so every 8 KB of compressed output was a separate synchronous write. A 35 KB player file took five of them, about 47 ms on a virtual disk. Compress into memory first and write the result with one synced write, keeping the same durability. A failure while serialising also no longer truncates the existing file.
+
+diff --git a/net/minecraft/nbt/NbtIo.java b/net/minecraft/nbt/NbtIo.java
+index a4c411730c605920e79af2b9b9b6482de542caef..c694693cc55b5b8b4818eb69b3f4af828504e428 100644
+--- a/net/minecraft/nbt/NbtIo.java
++++ b/net/minecraft/nbt/NbtIo.java
+@@ -77,12 +77,13 @@ public class NbtIo {
+     }
+ 
+     public static void writeCompressed(final CompoundTag tag, final Path file) throws IOException {
+-        try (
+-            OutputStream out = Files.newOutputStream(file, SYNC_OUTPUT_OPTIONS);
+-            OutputStream bufferedOut = new BufferedOutputStream(out);
+-        ) {
+-            writeCompressed(tag, bufferedOut);
++        // Misteln start - write compressed NBT files in a single synced write
++        java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream(64 * 1024);
++        writeCompressed(tag, bytes);
++        try (OutputStream out = Files.newOutputStream(file, SYNC_OUTPUT_OPTIONS)) {
++            bytes.writeTo(out);
+         }
++        // Misteln end - write compressed NBT files in a single synced write
+     }
+ 
+     public static void writeCompressed(final CompoundTag tag, final OutputStream out) throws IOException {
