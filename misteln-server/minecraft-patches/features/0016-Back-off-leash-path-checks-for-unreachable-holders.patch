@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Mon, 16 Nov 2026 08:31:58 +0800
+Subject: [PATCH] Back off leash path checks for unreachable holders
+
+A leashed mob re-paths towards its holder every tick while it is not being pulled. When the holder cannot be reached every one of those is a full failed search. Skip 5, 10, 20, then 40 ticks between checks while the path stays unreachable, and return to every tick as soon as one succeeds.
+
+diff --git a/net/minecraft/world/entity/PathfinderMob.java b/net/minecraft/world/entity/PathfinderMob.java
+index c661311dfdc1e21e3d6ec65e1e8b953637149675..9e1c7e7e7191b11d7dbb9595411dadc137be89a8 100644
+--- a/net/minecraft/world/entity/PathfinderMob.java
++++ b/net/minecraft/world/entity/PathfinderMob.java
+@@ -18,6 +18,10 @@ public abstract class PathfinderMob extends Mob {
+     }
+ 
+     public BlockPos movingTarget; public BlockPos getMovingTarget() { return movingTarget; } // Paper
++    // Misteln start - back off leash path checks for unreachable holders
++    private int unreachableLeashChecks;
++    private int skippedLeashChecks;
++    // Misteln end - back off leash path checks for unreachable holders
+ 
+     public float getWalkTargetValue(final BlockPos pos) {
+         return this.getWalkTargetValue(pos, this.level());
+@@ -64,7 +68,16 @@ public abstract class PathfinderMob extends Mob {
+             Vec3 delta = new Vec3(leashHolder.getX() - this.getX(), leashHolder.getY() - this.getY(), leashHolder.getZ() - this.getZ())
+                 .normalize()
+                 .scale(Math.max(distanceTo - 2.0F, 0.0F));
+-            this.getNavigation().moveTo(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z, this.followLeashSpeed());
++            // Misteln start - back off leash path checks for unreachable holders
++            if (this.unreachableLeashChecks > 0 && this.skippedLeashChecks < Math.min(40, 5 << Math.min(this.unreachableLeashChecks - 1, 3))) {
++                this.skippedLeashChecks++;
++                return;
++            }
++            this.skippedLeashChecks = 0;
++            final net.minecraft.world.level.pathfinder.Path leashPath = this.getNavigation().createPath(this.getX() + delta.x, this.getY() + delta.y, this.getZ() + delta.z, 1);
++            this.unreachableLeashChecks = leashPath != null && leashPath.canReach() ? 0 : Math.min(this.unreachableLeashChecks + 1, 4);
++            this.getNavigation().moveTo(leashPath, this.followLeashSpeed());
++            // Misteln end - back off leash path checks for unreachable holders
+         }
+     }
+ 
