@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Mon, 16 Nov 2026 21:08:29 +0800
+Subject: [PATCH] Enforce per chunk entity limits when breeding
+
+entity-per-chunk-save-limit only trims entities when a chunk is saved or loaded, so a farm that stays loaded keeps breeding past the limit and loses the extra animals on the next unload or restart. Refuse to add an entity spawned by breeding or from an egg when its chunk already holds that many of the same type. Natural spawning, spawners and spawn eggs are not affected.
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index cf0b9783cd3db3b66f1f1a7c169aaf29c50d947b..a5b669cf85d1a86c3d3b69cbd4840adaab1b4866 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1740,6 +1740,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+                 return true;
+             }
+             // Paper end - capture all item additions to the world
++            // Misteln start - enforce per chunk entity limits when breeding
++            if ((spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING || spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG) && this.misteln$isChunkAtEntityLimit(entity)) {
++                return false;
++            }
++            // Misteln end - enforce per chunk entity limits when breeding
+             // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
+             if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+                 return false;
+@@ -1750,6 +1755,27 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         }
+     }
+ 
++    // Misteln start - enforce per chunk entity limits when breeding
++    private boolean misteln$isChunkAtEntityLimit(final Entity entity) {
++        final net.minecraft.world.entity.EntityType<?> type = entity.getType();
++        final int limit = this.paperConfig().chunks.entityPerChunkSaveLimit.getOrDefault(type, -1);
++        if (limit < 0) {
++            return false;
++        }
++        final ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices = this.moonrise$getEntityLookup().getChunk(entity.getBlockX() >> 4, entity.getBlockZ() >> 4);
++        if (slices == null) {
++            return false;
++        }
++        int count = 0;
++        for (final Entity other : slices.getAllEntities()) {
++            if (other.getType() == type && !other.isRemoved() && ++count >= limit) {
++                return true;
++            }
++        }
++        return count >= limit;
++    }
++    // Misteln end - enforce per chunk entity limits when breeding
++
+     public boolean tryAddFreshEntityWithPassengers(final Entity entity) {
+         // CraftBukkit start
+         return this.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
