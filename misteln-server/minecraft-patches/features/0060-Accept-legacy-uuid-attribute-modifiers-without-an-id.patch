@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 23:40:04 +0800
+Subject: [PATCH] Accept legacy uuid attribute modifiers without an id
+
+
+diff --git a/ca/spottedleaf/dataconverter/minecraft/versions/V3945.java b/ca/spottedleaf/dataconverter/minecraft/versions/V3945.java
+index fb285a0c88b56e86c9060800364be488e177e04f..bb76359afceef4dd9346602ad20c48c382a366a7 100644
+--- a/ca/spottedleaf/dataconverter/minecraft/versions/V3945.java
++++ b/ca/spottedleaf/dataconverter/minecraft/versions/V3945.java
+@@ -83,6 +83,11 @@ public final class V3945 {
+         return new UUID(most, least);
+     }
+ 
++    public static String legacyModifierId(final UUID uuid) {
++        final String remapped = UUID_TO_ID.get(uuid);
++        return remapped != null ? remapped : "minecraft:" + uuid.toString().toLowerCase(Locale.ROOT);
++    }
++
+     private static ListType remapModifiers(final ListType list) {
+         final Map<String, MapType> ret = new LinkedHashMap<>();
+ 
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeModifier.java b/net/minecraft/world/entity/ai/attributes/AttributeModifier.java
+index b09fe265c5cd8a5acbc354ed7e547ce1c0197483..c15a692bc3260be6c7354136deba037fb8c14bf9 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeModifier.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeModifier.java
+@@ -14,7 +14,12 @@ import net.minecraft.util.StringRepresentable;
+ public record AttributeModifier(Identifier id, double amount, AttributeModifier.Operation operation) {
+     public static final MapCodec<AttributeModifier> MAP_CODEC = RecordCodecBuilder.mapCodec(
+         i -> i.group(
+-                Identifier.CODEC.fieldOf("id").forGetter(AttributeModifier::id),
++                Codec.mapEither(
++                        Identifier.CODEC.fieldOf("id"),
++                        net.minecraft.core.UUIDUtil.CODEC.fieldOf("uuid").<Identifier>xmap(uuid -> Identifier.parse(ca.spottedleaf.dataconverter.minecraft.versions.V3945.legacyModifierId(uuid)), id -> null)
++                    )
++                    .xmap(com.mojang.datafixers.util.Either::unwrap, com.mojang.datafixers.util.Either::left)
++                    .forGetter(AttributeModifier::id),
+                 Codec.DOUBLE.fieldOf("amount").forGetter(AttributeModifier::amount),
+                 AttributeModifier.Operation.CODEC.fieldOf("operation").forGetter(AttributeModifier::operation)
+             )

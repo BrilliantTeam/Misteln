@@ -9,7 +9,7 @@ new file mode 100644
 index 0000000000000000000000000000000000000000..c4697686ea120d805785edb50ed1e22a10e95ce0
 --- /dev/null
 +++ b/src/test/java/org/bukkit/craftbukkit/inventory/UpgradeRenamesAndFormatsTest.java
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,225 @@
 +package org.bukkit.craftbukkit.inventory;
 +
 +import static org.junit.jupiter.api.Assertions.*;
@@ -217,5 +217,21 @@ index 0000000000000000000000000000000000000000..c4697686ea120d805785edb50ed1e22a
 +            DedicatedServerProperties.mistelnLegacySpawnMonsters = spawnMonsters;
 +            DedicatedServerProperties.mistelnLegacyEnableCommandBlock = commandBlocks;
 +        }
++    }
++
++    @Test
++    public void testUuidModifiersSavedAfterV3945() throws Exception {
++        CompoundTag tag = snbt("{id:\"minecraft:shulker_box\",count:1,components:{\"minecraft:container\":[{slot:0,item:{id:\"minecraft:diamond_sword\",count:1,components:{"
++            + "\"minecraft:attribute_modifiers\":{modifiers:[{type:\"minecraft:attack_damage\",uuid:[I;-885041709,1683771192,-1533567981,-1556236849],name:\"Weapon modifier\",amount:3.0d,operation:\"add_value\",slot:\"mainhand\"},"
++            + "{type:\"minecraft:attack_speed\",uuid:[I;1,2,3,4],name:\"Weapon modifier\",amount:-2.4d,operation:\"add_value\",slot:\"mainhand\"}]}}}}]}}");
++        tag.putInt("DataVersion", V1_21_4);
++        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
++        NbtIo.writeCompressed(tag, bytes);
++
++        net.minecraft.world.item.ItemStack sword = CraftItemStack.unwrap(ItemStack.deserializeBytes(bytes.toByteArray())).get(DataComponents.CONTAINER).copyOne();
++        var modifiers = sword.get(DataComponents.ATTRIBUTE_MODIFIERS).modifiers();
++        assertEquals("minecraft:base_attack_damage", modifiers.get(0).modifier().id().toString());
++        assertEquals(3.0, modifiers.get(0).modifier().amount());
++        assertEquals("minecraft:00000001-0000-0002-0000-000300000004", modifiers.get(1).modifier().id().toString());
 +    }
 +}
