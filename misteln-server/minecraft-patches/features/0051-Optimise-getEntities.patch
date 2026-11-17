@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Taiyou06 <kaandindar21@gmail.com>
+Date: Sat, 12 Jul 2025 02:00:43 +0200
+Subject: [PATCH] Optimise getEntities
+
+Co-authored by: Martijn Muijsers <martijnmuijsers@live.nl>
+
+diff --git a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+index 6adfff4dd7d0afb2ac2181d58510c6e1eb2af127..a491e1a06e2b314d1035ebbfbe1aa3223e8375bf 100644
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/level/entity/ChunkEntitySlices.java
+@@ -537,6 +537,15 @@ public final class ChunkEntitySlices {
+ 
+             final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
+ 
++            // Leaf start - Optimise getEntities
++            // Cache AABB fields to local variables to reduce field accesses inside the hot loop.
++            final double boxMinX = box.minX;
++            final double boxMinY = box.minY;
++            final double boxMinZ = box.minZ;
++            final double boxMaxX = box.maxX;
++            final double boxMaxY = box.maxY;
++            final double boxMaxZ = box.maxZ;
++
+             for (int section = min; section <= max; ++section) {
+                 final BasicEntityList<Entity> list = entitiesBySection[section - minSection];
+ 
+@@ -545,11 +554,19 @@ public final class ChunkEntitySlices {
+                 }
+ 
+                 final Entity[] storage = list.storage;
++                final int len = Math.min(storage.length, list.size());
+ 
+-                for (int i = 0, len = Math.min(storage.length, list.size()); i < len; ++i) {
++                for (int i = 0; i < len; ++i) {
+                     final Entity entity = storage[i];
+ 
+-                    if (entity == null || entity == except || !entity.getBoundingBox().intersects(box)) {
++                    if (entity == null || entity == except) {
++                        continue;
++                    }
++
++                    // Inline AABB#intersects to avoid a method call and use the cached AABB fields.
++                    final AABB entityBB = entity.getBoundingBox();
++                    if (entityBB.maxX <= boxMinX || entityBB.minX >= boxMaxX || entityBB.maxY <= boxMinY || entityBB.minY >= boxMaxY || entityBB.maxZ <= boxMinZ || entityBB.minZ >= boxMaxZ) {
++                        // Leaf end - Optimise getEntities
+                         continue;
+                     }
+ 
+@@ -576,6 +593,15 @@ public final class ChunkEntitySlices {
+ 
+             final BasicEntityList<Entity>[] entitiesBySection = this.entitiesBySection;
+ 
++            // Leaf start - Optimise getEntities
++            // Cache AABB fields to local variables to reduce field accesses inside the hot loop.
++            final double boxMinX = box.minX;
++            final double boxMinY = box.minY;
++            final double boxMinZ = box.minZ;
++            final double boxMaxX = box.maxX;
++            final double boxMaxY = box.maxY;
++            final double boxMaxZ = box.maxZ;
++
+             for (int section = min; section <= max; ++section) {
+                 final BasicEntityList<Entity> list = entitiesBySection[section - minSection];
+ 
+@@ -584,11 +610,18 @@ public final class ChunkEntitySlices {
+                 }
+ 
+                 final Entity[] storage = list.storage;
++                final int len = Math.min(storage.length, list.size());
+ 
+-                for (int i = 0, len = Math.min(storage.length, list.size()); i < len; ++i) {
++                for (int i = 0; i < len; ++i) {
+                     final Entity entity = storage[i];
++                    if (entity == null || entity == except) {
++                        continue;
++                    }
+ 
+-                    if (entity == null || entity == except || !entity.getBoundingBox().intersects(box)) {
++                    // Inline AABB#intersects to avoid a method call and use the cached AABB fields.
++                    final AABB entityBB = entity.getBoundingBox();
++                    if (entityBB.maxX <= boxMinX || entityBB.minX >= boxMaxX || entityBB.maxY <= boxMinY || entityBB.minY >= boxMaxY || entityBB.maxZ <= boxMinZ || entityBB.minZ >= boxMaxZ) {
++                        // Leaf end - Optimise getEntities
+                         continue;
+                     }
+ 
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index bc8c817dfd3190e9c6f6175e89df16923530151b..5e28c091c00a6e5ef9a6c24a605d1292b2a4e29c 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -2262,7 +2262,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     @Override
+     public boolean isAlive() {
+-        return !this.isRemoved() && this.getHealth() > 0.0F && !this.dead; // Paper - Check this.dead
++        return !this.dead && !this.isRemoved() && this.getHealth() > 0.0F; // Paper - Check this.dead // Leaf - Optimise getEntities - check the cheapest first
+     }
+ 
+     public boolean isLookingAtMe(
