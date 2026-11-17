@@ -1,0 +1,24 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:57 +0800
+Subject: [PATCH] Leaf: Short-circuit isOnFire checks
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Check the remaining fire ticks before the fire immunity lookup and drop the client only shared flag check.
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index f61829bc638b7c5d60da318060123e716d2737b8..61bd38e35a534c9c1c597cce5db397478dfcd3c9 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -3784,8 +3784,7 @@ public abstract class Entity
+     }
+ 
+     public boolean isOnFire() {
+-        boolean isClientSide = this.level() != null && this.level().isClientSide();
+-        return !this.fireImmune() && (this.remainingFireTicks > 0 || isClientSide && this.getSharedFlag(FLAG_ONFIRE));
++        return this.remainingFireTicks > 0 && !this.fireImmune(); // Misteln - short-circuit isOnFire checks; the shared flag is only read on the client
+     }
+ 
+     public boolean isPassenger() {

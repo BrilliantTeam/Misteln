@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:56 +0800
+Subject: [PATCH] Leaf: Improve BlockEntity ticking isRemoved check
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Co-authored-by: kidofcubes <kidofcubes@gmail.com>
+
+Keep a direct reference to the block entity in the rebindable ticker wrapper so the isRemoved check does not go through the nested wrapper call.
+
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 76dae652c910e36c860791a8285bd9fee466d5b9..3151833b0991322b1b949f6b9e30b0f2fc0214c4 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -1015,13 +1015,15 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+ 
+     private static class RebindableTickingBlockEntityWrapper implements TickingBlockEntity {
+         private TickingBlockEntity ticker;
++        private @Nullable BlockEntity blockEntityReference; // Misteln - improve BlockEntity ticking isRemoved check
+ 
+         private RebindableTickingBlockEntityWrapper(final TickingBlockEntity ticker) {
+-            this.ticker = ticker;
++            this.rebind(ticker); // Misteln - improve BlockEntity ticking isRemoved check
+         }
+ 
+         private void rebind(final TickingBlockEntity ticker) {
+             this.ticker = ticker;
++            this.blockEntityReference = ticker instanceof BoundTickingBlockEntity<?> boundTicker ? boundTicker.blockEntity : null; // Misteln - improve BlockEntity ticking isRemoved check
+         }
+ 
+         @Override
+@@ -1031,6 +1033,12 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+ 
+         @Override
+         public boolean isRemoved() {
++            // Misteln start - improve BlockEntity ticking isRemoved check
++            final BlockEntity blockEntity = this.blockEntityReference;
++            if (blockEntity != null) {
++                return blockEntity.isRemoved();
++            }
++            // Misteln end - improve BlockEntity ticking isRemoved check
+             return this.ticker.isRemoved();
+         }
+ 

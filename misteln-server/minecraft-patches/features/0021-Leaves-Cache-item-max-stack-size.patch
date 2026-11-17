@@ -1,0 +1,98 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:55 +0800
+Subject: [PATCH] Leaves: Cache item max stack size
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Lumine1909/Leaves_Fork
+Ported from https://github.com/Winds-Studio/Leaf
+
+Hoppers ask every item for its max stack size when checking whether a container is full, and each call is a component map lookup. Cache the value in the component map and invalidate it when the max stack size component changes.
+
+Unlike the Leaf version the value is computed lazily, so copying a stack does not pay for a lookup, and an empty stack still reports 1 as vanilla does.
+
+diff --git a/net/minecraft/core/component/PatchedDataComponentMap.java b/net/minecraft/core/component/PatchedDataComponentMap.java
+index 4b77109e8bc5eb1ad7da9ec5684e7d61b5358565..b2feeaba1b731a097494eef52f9ad83749f0d575 100644
+--- a/net/minecraft/core/component/PatchedDataComponentMap.java
++++ b/net/minecraft/core/component/PatchedDataComponentMap.java
+@@ -17,6 +17,7 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+     private final DataComponentMap prototype;
+     private Reference2ObjectMap<DataComponentType<?>, Object> patch;
+     private boolean copyOnWrite;
++    private int maxStackSize = -1; // Misteln - cache item max stack size
+ 
+     public PatchedDataComponentMap(final DataComponentMap prototype) {
+         this(prototype, Reference2ObjectMaps.emptyMap(), true);
+@@ -73,6 +74,7 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+             lastValue = this.patch.put(type, Removed.nullToRemoved(value));
+         }
+ 
++        if (type == DataComponents.MAX_STACK_SIZE) this.maxStackSize = -1; // Misteln - cache item max stack size
+         return lastValue != null ? Objects.requireNonNullElse((T)Removed.removedToNull(lastValue), defaultValue) : defaultValue;
+     }
+ 
+@@ -90,6 +92,7 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+             lastValue = this.patch.remove(type);
+         }
+ 
++        if (type == DataComponents.MAX_STACK_SIZE) this.maxStackSize = -1; // Misteln - cache item max stack size
+         return (T)(lastValue != null ? Removed.removedToNull(lastValue) : defaultValue);
+     }
+ 
+@@ -102,6 +105,7 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+     }
+ 
+     private void applyPatch(final DataComponentType<?> type, final Object value) {
++        if (type == DataComponents.MAX_STACK_SIZE) this.maxStackSize = -1; // Misteln - cache item max stack size
+         Object defaultValue = this.prototype.get(type);
+         if (Removed.isNotRemoved(value)) {
+             if (value.equals(defaultValue)) {
+@@ -120,11 +124,13 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+         this.ensureMapOwnership();
+         this.patch.clear();
+         this.patch.putAll(patch.map);
++        this.maxStackSize = -1; // Misteln - cache item max stack size
+     }
+ 
+     public void clearPatch() {
+         this.ensureMapOwnership();
+         this.patch.clear();
++        this.maxStackSize = -1; // Misteln - cache item max stack size
+     }
+ 
+     public void setAll(final DataComponentMap components) {
+@@ -133,6 +139,16 @@ public final class PatchedDataComponentMap implements DataComponentMap {
+         }
+     }
+ 
++    // Misteln start - cache item max stack size
++    public int getMaxStackSize() {
++        int size = this.maxStackSize;
++        if (size < 0) {
++            this.maxStackSize = size = this.getOrDefault(DataComponents.MAX_STACK_SIZE, 1);
++        }
++        return size;
++    }
++    // Misteln end - cache item max stack size
++
+     private void ensureMapOwnership() {
+         if (this.copyOnWrite) {
+             this.patch = new Reference2ObjectArrayMap<>(this.patch);
+diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
+index effc0a3a934a6355da5210ed6fcb49d8b106b802..159eaac37178ee13856d55c181f90507370a20cb 100644
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -559,6 +559,13 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+         return result;
+     }
+ 
++    // Misteln start - cache item max stack size
++    @Override
++    public int getMaxStackSize() {
++        return this.isEmpty() ? 1 : this.components.getMaxStackSize();
++    }
++    // Misteln end - cache item max stack size
++
+     public boolean isStackable() {
+         return this.getMaxStackSize() > 1 && (!this.isDamageableItem() || !this.isDamaged());
+     }

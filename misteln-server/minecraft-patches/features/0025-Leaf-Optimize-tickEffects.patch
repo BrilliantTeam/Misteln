@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:57 +0800
+Subject: [PATCH] Leaf: Optimize tickEffects
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Skip creating the key set iterator when the entity has no active effects.
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 3abae585ec243c08aa540a2fbbf6b34142c1eac5..9aecb9ecedd711c328392e0db5a086df9b5cda58 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -957,6 +957,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+ 
+     protected void tickEffects() {
+         if (this.level() instanceof ServerLevel serverLevel) {
++            if (!this.activeEffects.isEmpty()) { // Misteln - optimize tickEffects
+             Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
+ 
+             this.tickingEffects = true; // CraftBukkit
+@@ -981,6 +982,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+             }
+             // CraftBukkit start
+             this.tickingEffects = false;
++            } // Misteln - optimize tickEffects
+             Runnable task;
+             while ((task = this.deferredEffectUpdates.poll()) != null) {
+                 task.run();

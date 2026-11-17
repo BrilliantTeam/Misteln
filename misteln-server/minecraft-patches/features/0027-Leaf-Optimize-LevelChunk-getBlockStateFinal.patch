@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:57 +0800
+Subject: [PATCH] Leaf: Optimize LevelChunk#getBlockStateFinal
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Use the cached minimum section instead of the interface default methods and read the section array once.
+
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 3151833b0991322b1b949f6b9e30b0f2fc0214c4..a105126c6373a16038cf7da6bc63ece47a671bdc 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -281,12 +281,17 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+ 
+     public BlockState getBlockStateFinal(final int x, final int y, final int z) {
+         // Copied and modified from below
+-        final int sectionIndex = this.getSectionIndex(y);
+-        if (sectionIndex < 0 || sectionIndex >= this.sections.length
+-            || this.sections[sectionIndex].nonEmptyBlockCount == 0) {
+-            return Blocks.AIR.defaultBlockState();
++        // Misteln start - optimize LevelChunk#getBlockStateFinal
++        final int sectionIndex = (y >> 4) - this.minSection;
++        if (sectionIndex < 0 || sectionIndex >= this.sections.length) {
++            return AIR_BLOCKSTATE;
+         }
+-        return this.sections[sectionIndex].getStates().get((y & 15) << 8 | (z & 15) << 4 | x & 15);
++        final LevelChunkSection section = this.sections[sectionIndex];
++        if (section.nonEmptyBlockCount == 0) {
++            return AIR_BLOCKSTATE;
++        }
++        return section.getStates().get((y & 15) << 8 | (z & 15) << 4 | x & 15);
++        // Misteln end - optimize LevelChunk#getBlockStateFinal
+     }
+ 
+     @Override

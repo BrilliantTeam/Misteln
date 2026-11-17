@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:56 +0800
+Subject: [PATCH] Leaf: Only update frozen ticks if changed
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Every living entity that is not in powder snow lowered its frozen ticks each tick even when they were already zero. Skip the synched data write in that case.
+
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index d9b729d257ab75f93f25353a770076bc48e7f862..3abae585ec243c08aa540a2fbbf6b34142c1eac5 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -3870,7 +3870,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         if (this.level() instanceof ServerLevel serverLevel) {
+             profiler.push("freezing");
+             if ((!this.isInPowderSnow || !this.canFreeze()) && !this.freezeLocked) { // Paper - Freeze Tick Lock API
+-                this.setTicksFrozen(Math.max(0, this.getTicksFrozen() - 2));
++                // Misteln start - only update frozen ticks if changed
++                final int ticksFrozen = this.getTicksFrozen();
++                if (ticksFrozen > 0) {
++                    this.setTicksFrozen(Math.max(0, ticksFrozen - 2));
++                }
++                // Misteln end - only update frozen ticks if changed
+             }
+ 
+             this.removeFrost();

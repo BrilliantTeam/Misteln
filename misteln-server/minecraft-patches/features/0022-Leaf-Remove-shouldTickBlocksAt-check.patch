@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:56 +0800
+Subject: [PATCH] Leaf: Remove shouldTickBlocksAt check
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+BoundTickingBlockEntity#tick already checks that its chunk is block ticking through the same chunk holder status, so the lookup in Level#tickBlockEntities is a duplicate.
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 123b3846b67e79aed0538a61da2a2b5a8cf3e40d..85ceb3922059b73e4c940ed5f02e0d474b042146 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -1550,7 +1550,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         // Paper end - Fix MC-117075 use removeAll
+             if (ticker.isRemoved()) {
+                 toRemove.add(ticker); // Paper - Fix MC-117075 use removeAll
+-            } else if (tickBlockEntities && this.shouldTickBlocksAt(ticker.getPos())) {
++            } else if (tickBlockEntities) { // Misteln - remove shouldTickBlocksAt check; BoundTickingBlockEntity#tick checks the same chunk status
+                 ticker.tick();
+                 // Paper start - rewrite chunk system
+                 if ((++tickedEntities & 7) == 0) {

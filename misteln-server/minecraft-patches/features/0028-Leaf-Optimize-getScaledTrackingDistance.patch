@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: RICE0707 <master.end.9377@gmail.com>
+Date: Tue, 17 Nov 2026 10:20:58 +0800
+Subject: [PATCH] Leaf: Optimize getScaledTrackingDistance
+
+Original license: GPL-3.0-only
+Original project: https://github.com/Winds-Studio/Leaf
+
+Skip the multiplication and division when the entity broadcast range is 100 percent.
+
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index e3830365ec49c77a325a78edba4cb34899a9dbe5..e9bc1be75bffd4db14c0bd9b6af4b0daadbf9c33 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -955,7 +955,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+     @Override
+     public int getScaledTrackingDistance(final int range) {
+-        return this.entityBroadcastRangePercentage() * range / 100;
++        // Misteln start - optimize getScaledTrackingDistance
++        final int percentage = this.entityBroadcastRangePercentage();
++        return percentage == 100 ? range : percentage * range / 100;
++        // Misteln end - optimize getScaledTrackingDistance
+     }
+ 
+     public int entityBroadcastRangePercentage() {
