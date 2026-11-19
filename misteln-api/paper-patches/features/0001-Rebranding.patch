@@ -5,10 +5,10 @@ Subject: [PATCH] Rebranding
 
 
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-index fb1fe2651e53a9bf46b3632c638e13eea9dcda93..d8539b01161e5721f361afffd5a2f7f4bdd9e29d 100644
+index d3b58c479f51b3cf3be04e1f5f08148b97ae8290..05773c4799f95f794356108f5ed1633109c2d3c0 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-@@ -25,6 +25,13 @@ public interface ServerBuildInfo {
+@@ -24,6 +24,13 @@ public interface ServerBuildInfo {
       */
      Key BRAND_PURPUR_ID = Key.key("purpurmc", "purpur");
      // Purpur end
@@ -23,7 +23,7 @@ index fb1fe2651e53a9bf46b3632c638e13eea9dcda93..d8539b01161e5721f361afffd5a2f7f4
       * Gets the {@code ServerBuildInfo}.
       *
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index c880d0010849ab733ad13bbd18fab3c864d0cf61..597d394b76e33b724201e7b08301211b1d825d33 100644
+index bb169b16792ba234147096bacbf1a81a6bc0c663..a5d7bba17978f397a988e6118c744e49e9d6df6e 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 @@ -259,7 +259,7 @@ public class VersionCommand extends BukkitCommand {

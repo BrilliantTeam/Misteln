@@ -6,10 +6,10 @@ Subject: [PATCH] Enforce per chunk entity limits when breeding
 entity-per-chunk-save-limit only trims entities when a chunk is saved or loaded, so a farm that stays loaded keeps breeding past the limit and loses the extra animals on the next unload or restart. Refuse to add an entity spawned by breeding or from an egg when its chunk already holds that many of the same type. Natural spawning, spawners and spawn eggs are not affected.
 
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index cf0b9783cd3db3b66f1f1a7c169aaf29c50d947b..a5b669cf85d1a86c3d3b69cbd4840adaab1b4866 100644
+index ba96636eeb0466af5295886eec7f51393b7bd2da..d169167764e9721d805f975e24da8394af28812f 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -1740,6 +1740,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1741,6 +1741,11 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
                  return true;
              }
              // Paper end - capture all item additions to the world
@@ -21,7 +21,7 @@ index cf0b9783cd3db3b66f1f1a7c169aaf29c50d947b..a5b669cf85d1a86c3d3b69cbd4840ada
              // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
              if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
                  return false;
-@@ -1750,6 +1755,27 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -1751,6 +1756,27 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
          }
      }
  

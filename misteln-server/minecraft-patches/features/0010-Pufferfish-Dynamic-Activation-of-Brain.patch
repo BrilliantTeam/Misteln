@@ -60,10 +60,10 @@ index 582d8d62026876e25cfbe723ead7309da1bb25ab..e3830365ec49c77a325a78edba4cb348
              DedicatedServer.LOGGER.error("Unable to load server configuration", e);
              return false;
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 2fae7a05cb7d9d1a1f6cf71558e826c28d5366cc..cf0b9783cd3db3b66f1f1a7c169aaf29c50d947b 100644
+index e29a6cc8778056c8beb380ed2626e49650c24872..ba96636eeb0466af5295886eec7f51393b7bd2da 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -922,6 +922,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+@@ -923,6 +923,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
              this.entityTickList
                  .forEach(
                      entity -> {
@@ -85,7 +85,7 @@ index 6c035ab17a83be8e6ad4191636d3062db6503463..f61829bc638b7c5d60da318060123e71
      public @Nullable Boolean immuneToFire = null; // Purpur - Fire immune API
      // Paper start - EAR 2
 diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
-index e4fd3727cdf99bebed91ac195034e988cdc9951b..af7ae155a43f20d48538aa82053f6b9f3781c620 100644
+index 0a66ccd39bd3fe3799251d8716f676b3ee243f25..649503edfb6f7e4942c111a47ef1c1e03f288c40 100644
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
 @@ -67,6 +67,7 @@ public class EntityType<T extends Entity> implements EntityTypeTest<Entity, T>,

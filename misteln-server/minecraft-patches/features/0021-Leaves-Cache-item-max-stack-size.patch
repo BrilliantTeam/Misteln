@@ -79,10 +79,10 @@ index 4b77109e8bc5eb1ad7da9ec5684e7d61b5358565..b2feeaba1b731a097494eef52f9ad837
          if (this.copyOnWrite) {
              this.patch = new Reference2ObjectArrayMap<>(this.patch);
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index effc0a3a934a6355da5210ed6fcb49d8b106b802..159eaac37178ee13856d55c181f90507370a20cb 100644
+index 7f8d25e3a85c2fbacc2071a799f1aa5e267cffc9..048a94fc81925f4864473d9e5063ffd7ab332100 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -559,6 +559,13 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
+@@ -560,6 +560,13 @@ public final class ItemStack implements DataComponentHolder, ItemInstance {
          return result;
      }
  
